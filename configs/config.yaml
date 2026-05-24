@@ -1,0 +1,44 @@
+booking:
+  venue_url: "https://ehall.szu.edu.cn/qljfwapp/sys/lwSzuCgyy/index.do#/sportVenue"
+  default_campus: "粤海校区"
+  default_sport: "网球"
+  default_date_index: 0
+  default_time_slot: "19:00-20:00"
+
+# 多账号配置
+# 密码从 .env 的 SZU_PASSWORD_{学号后4位} 读取，不写在这里
+accounts:
+  - username: "2023150090"
+    default_campus: "粤海校区"
+    default_sport: "一楼重量型健身"
+    default_date_index: 1
+    default_time_slot: "19:00-20:00"
+  - username: "2023150090"
+    default_campus: "粤海校区"
+    default_sport: "二楼有氧健身"
+    default_date_index: 1
+    default_time_slot: "19:00-20:00"
+
+retry:
+  max_attempts: 3
+  base_delay_seconds: 1.0
+  max_delay: 30.0
+
+logging:
+  level: "info"
+  dir: "logs"
+  rotation: "daily"
+  retention_days: 7
+
+observability:
+  trace_enabled: true
+  debug_mode: false
+  screenshot_on_failure: true
+
+browser:
+  headless: false
+  timeout_ms: 30000
+
+data:
+  dir: "data"
+  db_path: "data/booking.db"
