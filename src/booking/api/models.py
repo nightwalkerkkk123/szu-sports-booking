@@ -17,9 +17,11 @@ class TimeSlot(BaseModel):
     @property
     def is_available(self) -> bool:
         """是否可预约"""
+        if self.disabled:
+            return False
         if not self.state_explain:
-            return not self.disabled
-        return not self.disabled and "SYS_OPEN" in self.state_explain
+            return False
+        return "SYS_OPEN" in self.state_explain and "PE_OCCUPY" not in self.state_explain
 
 
 class Venue(BaseModel):

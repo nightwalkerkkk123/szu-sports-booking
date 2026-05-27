@@ -14,69 +14,136 @@ from booking.api import ApiBookingFlow
 USERNAME = "2023150090"
 PASSWORD = os.getenv("SZU_PASSWORD_0090", "")
 NAME = "王子豪"
-PROXY = None  # 直连可用，代理已关闭
 
 
-def test_flow():
-    """Test the complete API booking flow."""
-    flow = ApiBookingFlow(username=USERNAME, proxy=PROXY)
-
-    # Step 1: Try to load saved cookies first
+def test_cookie_persistence():
+    """Test 1: Cookie persistence - load without browser"""
     print("=" * 50)
-    print("Step 1: Loading saved cookies...")
-    if flow.load_cookies():
-        print("✓ Loaded cookies from file")
-    else:
-        print("✗ No saved cookies, need browser login")
+    print("TEST 1: Cookie persistence")
+    print("=" * 50)
 
-        # Step 2: Browser login
-        print("\n" + "=" * 50)
-        print("Step 2: Browser login...")
+    flow = ApiBookingFlow(username=USERNAME)
+    if flow.load_cookies():
+        print("✓ Cookies loaded from file (no browser needed)")
+        print(f"✓ Authenticated: {flow.is_authenticated}")
+
+        # Verify cookies work by making an API call
+        try:
+            slots = flow.get_time_slots(date="2026-05-28", sport="网球")
+            print(f"✓ API call works with saved cookies ({len(slots)} slots)")
+        except Exception as e:
+            print(f"✗ Saved cookies don't work: {e}")
+    else:
+        print("✗ No saved cookies, doing browser login...")
         if flow.login_with_browser(password=PASSWORD, name=NAME):
-            print("✓ Browser login successful, cookies saved")
+            print("✓ Browser login + cookie save successful")
         else:
             print("✗ Browser login failed")
+
+    flow.close()
+
+
+def test_full_flow():
+    """Test 2: Complete booking flow"""
+    print("\n" + "=" * 50)
+    print("TEST 2: Full booking flow")
+    print("=" * 50)
+
+    flow = ApiBookingFlow(username=USERNAME)
+
+    # Step 1: Load cookies
+    if not flow.load_cookies():
+        print("✗ No saved cookies, doing browser login...")
+        if not flow.login_with_browser(password=PASSWORD, name=NAME):
+            print("✗ Browser login failed")
+            flow.close()
             return
 
-    # Step 3: Get time slots
-    print("\n" + "=" * 50)
-    print("Step 3: Getting time slots...")
-    try:
-        slots = flow.get_time_slots(date="2026-05-28", sport="网球")
-        print(f"✓ Found {len(slots)} time slots")
-        for slot in slots:
-            status = "可预约" if slot.is_available else "已满"
-            print(f"  {slot.code} - {status}")
-    except Exception as e:
-        print(f"✗ Failed: {e}")
+    # Step 2: Get time slots
+    print("\n--- Time slots ---")
+    slots = flow.get_time_slots(date="2026-05-28", sport="网球")
+    available_slots = [s for s in slots if s.is_available]
+    print(f"Total: {len(slots)}, Available: {len(available_slots)}")
+    for s in slots:
+        mark = "✓" if s.is_available else "✗"
+        print(f"  {mark} {s.code} - {s.text}")
 
-    # Step 4: Get venues for a time slot
-    print("\n" + "=" * 50)
-    print("Step 4: Getting venues...")
+    if not available_slots:
+        print("\nNo available slots, trying venues anyway...")
+
+    # Step 3: Get venues for a time slot
+    print("\n--- Venues (19:00-20:00) ---")
     try:
         venues = flow.get_venues(
             date="2026-05-28",
             time_slot="19:00-20:00",
             sport="网球",
         )
-        print(f"✓ Found {len(venues)} venues")
+        available_venues = [v for v in venues if v.is_available]
+        print(f"Total: {len(venues)}, Available: {len(available_venues)}")
         for v in venues:
-            status = "可预约" if v.is_available else "不可用"
-            print(f"  {v.name} - {status} ({v.text})")
+            mark = "✓" if v.is_available else "✗"
+            print(f"  {mark} {v.name} ({v.venue_area_name}) - {v.text}")
     except Exception as e:
         print(f"✗ Failed: {e}")
 
-    # Step 5: Book (commented out for safety)
-    # print("\n" + "=" * 50)
-    # print("Step 5: Booking...")
-    # result = flow.book(date="2026-05-28", time_slot="19:00-20:00")
-    # print(f"Result: {result}")
+    # Step 4: Try booking if venues available
+    if available_venues:
+        print("\n--- Booking ---")
+        result = flow.book(date="2026-05-28", time_slot="19:00-20:00")
+        print(f"Result: {result}")
+    else:
+        print("\n--- Booking skipped (no available venues) ---")
 
-    # Cleanup
     flow.close()
+
+
+def test_cookie_expiry():
+    """Test 3: Check cookie expiry info"""
     print("\n" + "=" * 50)
-    print("Done!")
+    print("TEST 3: Cookie expiry check")
+    print("=" * 50)
+
+    from booking.api import CookieManager
+    import json
+    from datetime import datetime
+
+    mgr = CookieManager()
+    path = mgr._get_cookie_path(USERNAME)
+
+    if not path.exists():
+        print("✗ No cookie file")
+        return
+
+    with open(path) as f:
+        data = json.load(f)
+
+    saved_at = datetime.fromisoformat(data["saved_at"])
+    expires_at = datetime.fromisoformat(data["expires_at"])
+    now = datetime.now()
+    remaining = expires_at - now
+
+    print(f"Saved at:   {saved_at}")
+    print(f"Expires at: {expires_at}")
+    print(f"Remaining:  {remaining}")
+    print(f"Cookie count: {len(data['cookies'])}")
+    print(f"Cookie keys: {list(data['cookies'].keys())}")
+
+    # Check required cookies
+    missing = [c for c in mgr.REQUIRED_COOKIES if c not in data["cookies"]]
+    if missing:
+        print(f"✗ Missing required cookies: {missing}")
+    else:
+        print("✓ All required cookies present")
+
+    # Check validity
+    is_valid = mgr.is_valid(USERNAME)
+    print(f"✓ Cookie valid: {is_valid}")
 
 
 if __name__ == "__main__":
-    test_flow()
+    test_cookie_persistence()
+    test_cookie_expiry()
+    test_full_flow()
+    print("\n" + "=" * 50)
+    print("All tests done!")

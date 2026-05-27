@@ -16,7 +16,7 @@ class CookieManager:
     """
 
     DEFAULT_COOKIE_DIR = Path("data/cookies")
-    DEFAULT_EXPIRY_HOURS = 12  # CAS tokens typically expire in 12h
+    DEFAULT_EXPIRY_HOURS = 24  # CAS session 通常持续 24h+
 
     # Required cookies for API calls
     REQUIRED_COOKIES = [
