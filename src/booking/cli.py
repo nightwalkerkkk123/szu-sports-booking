@@ -305,6 +305,133 @@ def runs(limit):
         click.echo(f"{r['trace_id'][:8]:<12} {status_icon}{r['status']:<8} {campus:<8} {sport:<6} {time_str}")
 
 
+@cli.command()
+@click.option("--username", "-u", required=True, help="学号")
+@click.option("--password", "-p", help="密码（首次登录需要）")
+@click.option("--sport", "-s", default="网球", help="运动项目")
+@click.option("--date", "-d", help="预约日期 (YYYY-MM-DD)，默认明天")
+@click.option("--time-slot", "-t", help="时间段 (如 19:00-20:00)")
+@click.option("--campus", default="粤海校区", help="校区")
+@click.option("--name", help="姓名（首次需要）")
+@click.option("--dry-run", is_flag=True, help="只查询不预约")
+@click.option("--proxy", help="HTTP代理 (如 http://127.0.0.1:7897)")
+def api(username, password, sport, date, time_slot, campus, name, dry_run, proxy):
+    """API方式预约（直接调用后端接口）
+
+    首次使用需提供密码进行浏览器登录获取cookie，之后可复用cookie。
+
+    示例:
+      # 首次登录并预约
+      booking api -u 2023150090 -p 密码 -s 网球 -t 19:00-20:00 --name 王子豪
+
+      # 复用cookie预约（无需密码）
+      booking api -u 2023150090 -s 智能健身房 -t 19:00-20:00
+
+      # 只查询可用场地
+      booking api -u 2023150090 -s 网球 --dry-run
+
+      # 查看预约记录
+      booking api -u 2023150090 --dry-run
+    """
+    from booking.api import ApiBookingFlow
+    import os
+
+    flow = ApiBookingFlow(username=username, proxy=proxy)
+
+    # Step 1: 加载cookie或浏览器登录
+    if flow.load_cookies():
+        click.echo("✓ 已加载保存的cookie")
+    elif password:
+        click.echo("未找到cookie，进行浏览器登录...")
+        if flow.login_with_browser(password=password, name=name):
+            click.echo("✓ 登录成功，cookie已保存")
+        else:
+            click.echo("✗ 登录失败", err=True)
+            flow.close()
+            raise click.Abort()
+    else:
+        click.echo("未找到cookie且未提供密码，请使用 -p 提供密码", err=True)
+        flow.close()
+        raise click.Abort()
+
+    # Step 2: 查询可用日期
+    try:
+        dates = flow.get_available_dates()
+        click.echo(f"可预约日期: {dates}")
+    except Exception as e:
+        click.echo(f"查询日期失败: {e}", err=True)
+
+    # 如果没有指定日期，默认选明天
+    if not date:
+        if len(dates) >= 2:
+            date = dates[1]  # 明天
+        elif dates:
+            date = dates[0]
+        click.echo(f"预约日期: {date}")
+
+    # Step 3: dry-run 模式只查询
+    if dry_run:
+        click.echo(f"\n=== 查询模式: {sport} {date} ===")
+
+        # 查询时间段
+        try:
+            slots = flow.get_time_slots(date=date, sport=sport, campus=campus)
+            available_slots = [s for s in slots if s.is_available]
+            click.echo(f"\n时间段: {len(slots)} 个, 可预约: {len(available_slots)} 个")
+            for s in slots:
+                mark = "✓" if s.is_available else "✗"
+                click.echo(f"  {mark} {s.code} - {s.text}")
+        except Exception as e:
+            click.echo(f"查询时间段失败: {e}")
+
+        # 查询场地
+        if time_slot:
+            try:
+                venues = flow.get_venues(date=date, time_slot=time_slot, sport=sport, campus=campus)
+                available_venues = [v for v in venues if v.is_available]
+                click.echo(f"\n场地 ({time_slot}): {len(venues)} 个, 可预约: {len(available_venues)} 个")
+                for v in venues:
+                    mark = "✓" if v.is_available else "✗"
+                    click.echo(f"  {mark} {v.name} ({v.venue_area_name}) - {v.text}")
+            except Exception as e:
+                click.echo(f"查询场地失败: {e}")
+
+        # 查询预约记录
+        try:
+            records = flow.get_my_bookings(page_size=5)
+            active = [r for r in records if r.is_active]
+            click.echo(f"\n预约记录: {len(records)} 条, 进行中: {len(active)} 条")
+            for r in records:
+                mark = "●" if r.is_active else "○"
+                click.echo(f"  {mark} {r.sport_name} | {r.time_slot} | {r.status_display}")
+        except Exception as e:
+            click.echo(f"查询记录失败: {e}")
+
+        flow.close()
+        return
+
+    # Step 4: 执行预约
+    if not time_slot:
+        click.echo("请指定时间段 (-t)，如: -t 19:00-20:00", err=True)
+        flow.close()
+        raise click.Abort()
+
+    click.echo(f"\n=== 预约: {sport} {date} {time_slot} ({campus}) ===")
+
+    result = flow.book(date=date, time_slot=time_slot, sport=sport, campus=campus, name=name)
+
+    if result["success"]:
+        click.echo(f"✓ 预约成功! 场地: {result['venue']}")
+        if result.get("verified"):
+            click.echo("✓ 预约记录已验证")
+        else:
+            click.echo("⚠ 未能验证预约记录，请手动确认")
+    else:
+        click.echo(f"✗ 预约失败: {result.get('message', '未知错误')}")
+
+    flow.close()
+
+
 cli.add_command(run)
 cli.add_command(test_login)
 cli.add_command(validate_config)
@@ -312,6 +439,7 @@ cli.add_command(smoke)
 cli.add_command(report)
 cli.add_command(trace)
 cli.add_command(runs)
+cli.add_command(api)
 
 
 if __name__ == "__main__":
