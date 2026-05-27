@@ -21,7 +21,7 @@ class SessionManager:
         self._init_headers()
 
     def _init_headers(self):
-        """Initialize default headers"""
+        """Initialize default headers (matching browser)"""
         self.headers = {
             "Accept": "*/*",
             "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
@@ -29,10 +29,13 @@ class SessionManager:
             "Connection": "keep-alive",
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "Origin": "https://ehall.szu.edu.cn",
-            "Referer": "https://ehall.szu.edu.cn/qljfwapp/sys/lwSzuCgyy/index.do#/sportVenue",
+            "Referer": "https://ehall.szu.edu.cn/qljfwapp/sys/lwSzuCgyy/index.do",
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-origin",
+            "sec-ch-ua": '"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"macOS"',
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
             "X-Requested-With": "XMLHttpRequest",
         }

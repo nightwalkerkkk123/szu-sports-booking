@@ -47,7 +47,10 @@ class ApiClient:
     def __init__(self, timeout: float = 30.0, proxy: str | None = None):
         self._timeout = timeout
         self._session = SessionManager()
-        kwargs = {"timeout": timeout}
+        kwargs = {
+            "timeout": timeout,
+            "headers": self._session.headers,  # 使用我们的浏览器 headers
+        }
         if proxy:
             kwargs["proxy"] = proxy
         self._http = httpx.Client(**kwargs)
@@ -87,8 +90,7 @@ class ApiClient:
             Response JSON as dict
         """
         url = f"{self.BASE_URL}{path}"
-        headers = self._session.headers.copy()
-        headers["Cookie"] = self._session.get_cookie_header()
+        headers = {"Cookie": self._session.get_cookie_header()}
 
         try:
             if method.upper() == "POST":
