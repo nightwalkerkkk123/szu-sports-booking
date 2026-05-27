@@ -72,6 +72,7 @@ class ApiBookingFlow:
         username: str,
         cookie_dir: Optional[Path] = None,
         browser_headless: bool = False,
+        proxy: Optional[str] = None,
     ):
         """
         Initialize API booking flow.
@@ -80,11 +81,13 @@ class ApiBookingFlow:
             username: Student ID
             cookie_dir: Directory for cookie storage
             browser_headless: Run browser in headless mode
+            proxy: HTTP proxy URL (e.g. "http://127.0.0.1:7897")
         """
         self._username = username
         self._password: Optional[str] = None
         self._browser_headless = browser_headless
-        self._api_client = ApiClient()
+        self._proxy = proxy
+        self._api_client = ApiClient(proxy=proxy)
         self._cookie_manager = CookieManager(cookie_dir)
         self._browser = None
         self._name: Optional[str] = None  # Student name for booking
@@ -111,7 +114,7 @@ class ApiBookingFlow:
         return False
 
     def save_cookies(self) -> bool:
-        """Save cookies from browser to file"""
+        """Save cookies from browser to file and set on API client"""
         if self._browser is None:
             logger.warning("No browser to extract cookies from")
             return False
@@ -121,6 +124,10 @@ class ApiBookingFlow:
             logger.warning("No cookies extracted from browser")
             return False
 
+        # Set cookies on API client in memory
+        self._api_client.set_cookies(cookies)
+
+        # Persist to file
         return self._cookie_manager.save(self._username, cookies)
 
     def clear_cookies(self):

@@ -43,12 +43,15 @@ class ApiClient:
     Uses httpx for HTTP requests with cookie-based authentication.
     """
 
-    BASE_URL = "https://ehall.szu.edu.cn/qljfwapp"
+    BASE_URL = "https://ehall.szu.edu.cn/qljfwapp/sys/lwSzuCgyy"
 
-    def __init__(self, timeout: float = 30.0):
+    def __init__(self, timeout: float = 30.0, proxy: str | None = None):
         self._timeout = timeout
         self._session = SessionManager()
-        self._http = httpx.Client(timeout=timeout)
+        kwargs = {"timeout": timeout}
+        if proxy:
+            kwargs["proxy"] = proxy
+        self._http = httpx.Client(**kwargs)
 
     def set_cookies(self, cookies: dict):
         """Set cookies for authentication"""

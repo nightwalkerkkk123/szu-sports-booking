@@ -29,7 +29,7 @@ class SessionManager:
             "Connection": "keep-alive",
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "Origin": "https://ehall.szu.edu.cn",
-            "Referer": "https://ehall.szu.edu.cn/qljfwapp/sys/lwSzuCgyy/index.do",
+            "Referer": "https://ehall.szu.edu.cn/qljfwapp/sys/lwSzuCgyy/index.do#/sportVenue",
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-origin",
