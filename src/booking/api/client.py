@@ -306,7 +306,7 @@ class ApiClient:
         booking_data = {
             "DHID": "",
             "YYRGH": username,
-            "CYRS": "",
+            "CYRS": "1",
             "YYRXM": name,
             "CGDM": venue_area_code,
             "CDWID": venue_wid,
@@ -333,7 +333,7 @@ class ApiClient:
             if isinstance(result, dict):
                 response = BookingResponse(
                     code=result.get("code", "0"),
-                    message=result.get("message"),
+                    message=result.get("msg") or result.get("message"),
                     datas=result.get("datas"),
                 )
             else:
