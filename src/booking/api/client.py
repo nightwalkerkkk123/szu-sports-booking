@@ -25,7 +25,7 @@ from typing import Optional
 import httpx
 
 from .session import SessionManager
-from .models import TimeSlot, Venue, BookingResponse
+from .models import TimeSlot, Venue, BookingResponse, BookingRecord
 from .errors import (
     ApiError,
     AuthenticationError,
@@ -351,6 +351,49 @@ class ApiClient:
         except Exception as e:
             logger.error(f"预约失败: {e}")
             raise NetworkError(f"预约失败: {str(e)}")
+
+    def get_my_bookings(
+        self,
+        page_size: int = 10,
+        page_number: int = 1,
+    ) -> list[BookingRecord]:
+        """
+        Get booking history for current user.
+
+        Args:
+            page_size: Number of records per page
+            page_number: Page number (1-based)
+
+        Returns:
+            List of BookingRecord objects
+        """
+        if not self.is_authenticated:
+            raise AuthenticationError("请先登录")
+
+        try:
+            # First call to get searchMeta
+            self._request("POST", "/modules/myBooking.do", data={"*json": "1"})
+            self._request("POST", "/modules/myBooking/myBookingInfo.do",
+                         data={"*searchMeta": "1"})
+
+            # Then get actual data
+            result = self._request("POST", "/modules/myBooking.do", data={"*json": "1"})
+            result = self._request(
+                "POST",
+                "/modules/myBooking/myBookingInfo.do",
+                data={"pageSize": str(page_size), "pageNumber": str(page_number)},
+            )
+
+            if isinstance(result, dict):
+                rows = result.get("datas", {}).get("myBookingInfo", {}).get("rows", [])
+                records = [BookingRecord(**item) for item in rows]
+                logger.info(f"获取到 {len(records)} 条预约记录")
+                return records
+            return []
+
+        except Exception as e:
+            logger.error(f"获取预约记录失败: {e}")
+            raise NetworkError(f"获取预约记录失败: {str(e)}")
 
     def __enter__(self):
         return self

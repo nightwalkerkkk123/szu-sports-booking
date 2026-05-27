@@ -355,13 +355,55 @@ class ApiBookingFlow:
             booking_type=booking_type,
         )
 
+        # 预约提交后查询记录验证闭环
+        verified = False
+        if result.is_success:
+            verified = self._verify_booking(date, sport, time_slot)
+
         return {
             "success": result.is_success,
             "code": result.code,
             "message": result.message,
             "venue": venue.name,
+            "verified": verified,
             "datas": result.datas,
         }
+
+    def get_my_bookings(self, page_size: int = 10) -> list:
+        """查询我的预约记录"""
+        self._ensure_authenticated()
+        return self._api_client.get_my_bookings(page_size=page_size)
+
+    def _verify_booking(self, date: str, sport: str, time_slot: str) -> bool:
+        """
+        预约后查询记录验证是否成功创建。
+
+        Args:
+            date: 预约日期
+            sport: 运动名称
+            time_slot: 时间段
+
+        Returns:
+            True 如果在预约记录中找到了对应条目
+        """
+        import time as _time
+        _time.sleep(1)  # 等待服务器处理
+
+        try:
+            records = self._api_client.get_my_bookings(page_size=5)
+            sport_code = self.SPORT_CODES.get(sport, sport)
+            # 匹配日期+项目+时间
+            for r in records:
+                if (date in r.time_slot
+                    and r.sport_code == sport_code
+                    and r.is_active):
+                    logger.info(f"预约验证通过: {r.sport_name} {r.time_slot} 状态={r.status_display}")
+                    return True
+            logger.warning("预约验证未找到匹配记录")
+            return False
+        except Exception as e:
+            logger.warning(f"预约验证失败: {e}")
+            return False
 
     # ===== Context Manager =====
 

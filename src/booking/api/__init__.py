@@ -5,7 +5,7 @@ from .session import SessionManager
 from .cookie_manager import CookieManager
 from .cookie_extractor import extract_cookies_from_page, extract_cookies_from_browser
 from .flow import ApiBookingFlow
-from .models import TimeSlot, Venue, BookingRequest, BookingResponse
+from .models import TimeSlot, Venue, BookingRequest, BookingResponse, BookingRecord
 from .errors import (
     ApiError,
     AuthenticationError,
@@ -30,6 +30,7 @@ __all__ = [
     "Venue",
     "BookingRequest",
     "BookingResponse",
+    "BookingRecord",
     # Errors
     "ApiError",
     "AuthenticationError",

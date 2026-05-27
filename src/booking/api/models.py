@@ -89,3 +89,29 @@ class BookingResponse(BaseModel):
     def is_success(self) -> bool:
         """是否预约成功"""
         return self.code == "0"
+
+
+class BookingRecord(BaseModel):
+    """预约记录数据模型"""
+    wid: str = Field(alias="WID")
+    order_id: str = Field(default="", alias="DHID")  # 订单号
+    sport_name: str = Field(default="", alias="XMDM_DISPLAY")  # "二楼有氧健身"
+    sport_code: str = Field(default="", alias="XMDM")
+    venue_name: str = Field(default="", alias="CDWID_DISPLAY")  # "二楼健身房"
+    venue_area_name: str = Field(default="", alias="CGDM_DISPLAY")  # "运动广场西馆二楼健身房"
+    campus_name: str = Field(default="", alias="XQWID_DISPLAY")  # "粤海校区"
+    time_slot: str = Field(default="", alias="YYSJD")  # "2026-05-25 19:00~2026-05-25 20:00"
+    status: str = Field(default="", alias="YYZT")  # "CG_DQR" 待确认 / "CG_WC" 已完成 / "CG_QX" 取消
+    status_display: str = Field(default="", alias="YYZT_DISPLAY")  # "待确认" / "已完成" / "取消预约"
+    booking_type: str = Field(default="", alias="YYLX")
+    username: str = Field(default="", alias="YYRGH")
+    created_at: str = Field(default="", alias="CJSJ")  # "2026-05-24 20:50:09"
+    amount: str = Field(default="0.00", alias="TRANAMT")  # "5.00"
+    is_paid: str = Field(default="0", alias="SFZF")  # "0" 未支付 / "1" 已支付
+
+    model_config = {"populate_by_name": True}
+
+    @property
+    def is_active(self) -> bool:
+        """是否为有效预约（未取消、未完成）"""
+        return self.status not in ("CG_QX", "CG_WC")
