@@ -39,14 +39,28 @@ class ApiBookingFlow:
     Handles login via browser -> cookie persistence -> API booking.
     """
 
-    # Sport code mapping
+    # Sport code mapping (from HAR data)
     SPORT_CODES = {
-        "网球": "004",
         "羽毛球": "001",
-        "乒乓球": "002",
-        "篮球": "003",
-        "健身": "005",
-        "游泳": "006",
+        "足球": "002",
+        "排球": "003",
+        "网球": "004",
+        "篮球": "005",
+        "壁球": "006",
+        "一楼重量型健身": "007",
+        "二楼有氧健身": "008",
+        "游泳": "009",
+        "乒乓球": "013",
+        "舞蹈": "015",
+        "桌球": "016",
+        "骑行": "017",
+        "魔镜": "018",
+        "桌游": "019",
+        "健身房": "020",
+        "瑜伽": "021",
+        "智能健身房": "024",
+        "匹克球": "030",
+        "毽球": "034",
     }
 
     # Campus code mapping
@@ -57,14 +71,28 @@ class ApiBookingFlow:
         "丽湖": 2,
     }
 
-    # Venue area codes by sport
-    VENUE_AREA_CODES = {
-        "网球": "015",
-        "羽毛球": "016",
-        "乒乓球": "017",
-        "篮球": "018",
-        "健身": "019",
-        "游泳": "020",
+    # Default booking type per sport (1.0=包场, 2.0=散场)
+    BOOKING_TYPES = {
+        "羽毛球": "1.0",
+        "足球": "2.0",
+        "排球": "1.0",
+        "网球": "1.0",
+        "篮球": "2.0",
+        "壁球": "1.0",
+        "一楼重量型健身": "2.0",
+        "二楼有氧健身": "2.0",
+        "游泳": "2.0",
+        "乒乓球": "1.0",
+        "舞蹈": "1.0",
+        "桌球": "1.0",
+        "骑行": "1.0",
+        "魔镜": "1.0",
+        "桌游": "1.0",
+        "健身房": "2.0",
+        "瑜伽": "2.0",
+        "智能健身房": "1.0",
+        "匹克球": "1.0",
+        "毽球": "1.0",
     }
 
     def __init__(
@@ -215,6 +243,11 @@ class ApiBookingFlow:
                 "Not authenticated. Call load_cookies() or login_with_browser() first."
             )
 
+    def get_available_dates(self) -> list[str]:
+        """Get available booking dates"""
+        self._ensure_authenticated()
+        return self._api_client.get_available_dates()
+
     def get_time_slots(
         self,
         date: str,
@@ -226,11 +259,13 @@ class ApiBookingFlow:
 
         sport_code = self.SPORT_CODES.get(sport, sport)
         campus_code = self.CAMPUS_CODES.get(campus, campus)
+        booking_type = self.BOOKING_TYPES.get(sport, "1.0")
 
         return self._api_client.get_time_slots(
             campus=campus_code,
             date=date,
             sport_code=sport_code,
+            booking_type=booking_type,
         )
 
     def get_venues(
@@ -245,8 +280,8 @@ class ApiBookingFlow:
 
         sport_code = self.SPORT_CODES.get(sport, sport)
         campus_code = self.CAMPUS_CODES.get(campus, campus)
+        booking_type = self.BOOKING_TYPES.get(sport, "1.0")
 
-        # Parse time slot
         start_time, end_time = time_slot.split("-")
 
         return self._api_client.get_venues(
@@ -255,6 +290,7 @@ class ApiBookingFlow:
             sport_code=sport_code,
             start_time=start_time.strip(),
             end_time=end_time.strip(),
+            booking_type=booking_type,
         )
 
     def book(
@@ -282,7 +318,7 @@ class ApiBookingFlow:
 
         sport_code = self.SPORT_CODES.get(sport, sport)
         campus_code = self.CAMPUS_CODES.get(campus, campus)
-        venue_area_code = self.VENUE_AREA_CODES.get(sport, "015")
+        booking_type = self.BOOKING_TYPES.get(sport, "1.0")
         student_name = name or self._name
 
         if not student_name:
@@ -315,7 +351,8 @@ class ApiBookingFlow:
             name=student_name,
             sport_code=sport_code,
             campus=campus_code,
-            venue_area_code=venue_area_code,
+            venue_area_code=venue.venue_area_code,
+            booking_type=booking_type,
         )
 
         return {

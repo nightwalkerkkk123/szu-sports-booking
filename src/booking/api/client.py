@@ -5,6 +5,9 @@ Example:
     api = ApiClient()
     api.set_cookies_from_browser(browser)
 
+    # Get available dates
+    dates = api.get_available_dates()
+
     # Get available time slots
     slots = api.get_time_slots(campus=1, date="2026-05-25", sport_code="004")
 
@@ -18,19 +21,15 @@ Example:
 """
 import logging
 from typing import Optional
-from datetime import datetime
 
 import httpx
 
 from .session import SessionManager
-from .models import TimeSlot, Venue, BookingRequest, BookingResponse
+from .models import TimeSlot, Venue, BookingResponse
 from .errors import (
     ApiError,
     AuthenticationError,
     NetworkError,
-    BookingError,
-    ValidationError,
-    SessionExpiredError,
 )
 
 logger = logging.getLogger("booking.api")
@@ -75,7 +74,6 @@ class ApiClient:
         method: str,
         path: str,
         data: Optional[dict] = None,
-        raise_on_error: bool = True,
     ) -> dict:
         """
         Make HTTP request to backend.
@@ -84,15 +82,9 @@ class ApiClient:
             method: HTTP method (GET, POST)
             path: API path (e.g. "/sportVenue/getTimeList.do")
             data: Form data
-            raise_on_error: Raise exception on HTTP error
 
         Returns:
             Response JSON as dict
-
-        Raises:
-            NetworkError: On network failures
-            AuthenticationError: On 401/403
-            SessionExpiredError: On session expiry
         """
         url = f"{self.BASE_URL}{path}"
         headers = self._session.headers.copy()
@@ -104,7 +96,6 @@ class ApiClient:
             else:
                 response = self._http.get(url, params=data, headers=headers)
 
-            # Handle HTTP errors
             if response.status_code == 401 or response.status_code == 403:
                 raise AuthenticationError("认证失败，请重新登录")
 
@@ -113,7 +104,6 @@ class ApiClient:
                              status_code=404)
 
             response.raise_for_status()
-
             return response.json()
 
         except httpx.TimeoutException:
@@ -132,11 +122,52 @@ class ApiClient:
 
     # ===== Public API Methods =====
 
+    def get_available_dates(self) -> list[str]:
+        """
+        Get available booking dates.
+
+        Returns:
+            List of date strings (e.g. ["2026-05-27", "2026-05-28"])
+        """
+        if not self.is_authenticated:
+            raise AuthenticationError("请先登录")
+
+        result = self._request("POST", "/sportVenue/getRqList.do")
+        if isinstance(result, list):
+            return result
+        return []
+
+    def get_app_settings(self) -> dict:
+        """
+        Get app settings (booking start time, cancel rules, etc.).
+
+        Returns:
+            Dict with settings like YYKS (booking start time), QXYYTQ (cancel minutes)
+        """
+        if not self.is_authenticated:
+            raise AuthenticationError("请先登录")
+
+        return self._request("POST", "/sportVenue/getAppSets.do")
+
+    def get_sport_venue_data(self) -> dict:
+        """
+        Get initial sport venue data (campus list, sport list, venue list).
+
+        Returns:
+            Dict with campusList, xmList, packageVenueList
+        """
+        if not self.is_authenticated:
+            raise AuthenticationError("请先登录")
+
+        result = self._request("GET", "/sportVenue/getSportVenueData.do")
+        return result
+
     def get_time_slots(
         self,
         campus: int,
         date: str,
         sport_code: str,
+        booking_type: str = "1.0",
     ) -> list[TimeSlot]:
         """
         Get available time slots for a sport on a date.
@@ -145,39 +176,26 @@ class ApiClient:
             campus: Campus code (1=粤海, 2=丽湖)
             date: Date string (YYYY-MM-DD)
             sport_code: Sport code (004=网球, 001=羽毛球, etc.)
+            booking_type: Booking type (1.0=包场, 2.0=散场)
 
         Returns:
             List of TimeSlot objects
-
-        Raises:
-            AuthenticationError: Not authenticated
-            NetworkError: Request failed
-
-        Example response:
-            [
-                TimeSlot(wid="xxx", code="08:00-09:00", ...),
-                TimeSlot(wid="xxx", code="09:00-10:00", ...),
-            ]
         """
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
 
         data = {
-            "XMDM": sport_code,
+            "XQ": str(campus),
             "YYRQ": date,
-            "YYLX": "1.0",
+            "YYLX": booking_type,
+            "XMDM": sport_code,
         }
 
-        # Campus is passed as XQDM parameter
-        if campus:
-            data["XQDM"] = str(campus)
-
-        logger.info(f"获取时间段: campus={campus}, date={date}, sport={sport_code}")
+        logger.info(f"获取时间段: campus={campus}, date={date}, sport={sport_code}, type={booking_type}")
 
         try:
             result = self._request("POST", "/sportVenue/getTimeList.do", data)
 
-            # Parse response - could be list or dict with rows
             if isinstance(result, list):
                 slots = [TimeSlot(**item) for item in result]
             elif isinstance(result, dict) and "datas" in result:
@@ -202,6 +220,7 @@ class ApiClient:
         sport_code: str,
         start_time: str,
         end_time: str,
+        booking_type: str = "1.0",
     ) -> list[Venue]:
         """
         Get available venues for a time slot.
@@ -212,13 +231,10 @@ class ApiClient:
             sport_code: Sport code (004=网球, etc.)
             start_time: Start time (e.g. "12:00")
             end_time: End time (e.g. "13:00")
+            booking_type: Booking type (1.0=包场, 2.0=散场)
 
         Returns:
             List of Venue objects
-
-        Raises:
-            AuthenticationError: Not authenticated
-            NetworkError: Request failed
         """
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
@@ -226,7 +242,7 @@ class ApiClient:
         data = {
             "XMDM": sport_code,
             "YYRQ": date,
-            "YYLX": "1.0",
+            "YYLX": booking_type,
             "KSSJ": start_time,
             "JSSJ": end_time,
             "XQDM": str(campus),
@@ -238,7 +254,6 @@ class ApiClient:
         try:
             result = self._request("POST", "/modules/sportVenue/getOpeningRoom.do", data)
 
-            # Parse response
             if isinstance(result, dict) and "datas" in result:
                 rows = result.get("datas", {}).get("getOpeningRoom", {}).get("rows", [])
                 venues = [Venue(**item) for item in rows]
@@ -264,6 +279,7 @@ class ApiClient:
         sport_code: str = "004",
         campus: int = 1,
         venue_area_code: str = "015",
+        booking_type: str = "1.0",
     ) -> BookingResponse:
         """
         Submit a booking request.
@@ -277,22 +293,16 @@ class ApiClient:
             sport_code: Sport code (default: "004" for tennis)
             campus: Campus code (default: 1 for 粤海)
             venue_area_code: Venue area code (default: "015")
+            booking_type: Booking type (1.0=包场, 2.0=散场)
 
         Returns:
             BookingResponse with success/failure info
-
-        Raises:
-            AuthenticationError: Not authenticated
-            NetworkError: Request failed
-            BookingError: Booking rejected by server
         """
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
 
-        # Parse time slot into start/end times
         start_time, end_time = time_slot.split("-")
 
-        # Build booking request
         booking_data = {
             "DHID": "",
             "YYRGH": username,
@@ -304,7 +314,7 @@ class ApiClient:
             "XQWID": str(campus),
             "KYYSJD": time_slot,
             "YYRQ": date,
-            "YYLX": "1.0",
+            "YYLX": booking_type,
             "YYKS": f"{date} {start_time.strip()}",
             "YYJS": f"{date} {end_time.strip()}",
             "PC_OR_PHONE": "pc",
@@ -320,7 +330,6 @@ class ApiClient:
                 booking_data,
             )
 
-            # Parse response
             if isinstance(result, dict):
                 response = BookingResponse(
                     code=result.get("code", "0"),

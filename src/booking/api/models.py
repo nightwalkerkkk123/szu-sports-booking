@@ -46,7 +46,19 @@ class Venue(BaseModel):
     @property
     def is_available(self) -> bool:
         """是否可预约"""
-        return not self.disabled and self.state_explain == "SYS_OPEN"
+        if self.disabled:
+            return False
+        if self.state_explain != "SYS_OPEN":
+            return False
+        # 散场模式：检查是否已满（如 "50/50"）
+        if "/" in self.text:
+            try:
+                current, capacity = self.text.split("/")
+                if int(current) >= int(capacity):
+                    return False
+            except (ValueError, IndexError):
+                pass
+        return True
 
 
 class BookingRequest(BaseModel):
