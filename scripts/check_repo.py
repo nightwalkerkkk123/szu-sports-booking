@@ -57,9 +57,9 @@ def check_files():
     for file in REQUIRED_FILES:
         if not (root / file).exists():
             missing.append(file)
-            print(f"  ✗ {file}")
+            print(f"  [X] {file}")
         else:
-            print(f"  ✓ {file}")
+            print(f"  [OK] {file}")
 
     return missing
 
@@ -73,9 +73,9 @@ def check_dirs():
     for dir in REQUIRED_DIRS:
         if not (root / dir).is_dir():
             missing.append(dir)
-            print(f"  ✗ {dir}/")
+            print(f"  [X] {dir}/")
         else:
-            print(f"  ✓ {dir}/")
+            print(f"  [OK] {dir}/")
 
     return missing
 
@@ -88,10 +88,10 @@ def check_modules():
     for module in REQUIRED_MODULES:
         try:
             __import__(module)
-            print(f"  ✓ {module}")
+            print(f"  [OK] {module}")
         except ImportError as e:
             failed.append((module, str(e)))
-            print(f"  ✗ {module}: {e}")
+            print(f"  [X] {module}: {e}")
 
     return failed
 
@@ -107,7 +107,7 @@ def check_pytest_markers():
         markers = ["unit", "integration", "smoke", "real_env"]
         for marker in markers:
             if f"{marker}:" in content or f'"{marker}' in content:
-                print(f"  ✓ {marker} marker")
+                print(f"  [OK] {marker} marker")
             else:
                 print(f"  ? {marker} marker (未确认)")
     else:
@@ -141,7 +141,7 @@ def check_docs_synced():
         if not full_path.exists():
             issues.append(f"  ! {dir_path} 列在文档中但不存在")
         else:
-            print(f"  ✓ {dir_path}")
+            print(f"  [OK] {dir_path}")
 
     if issues:
         print("\n  文档同步问题:")
@@ -170,17 +170,17 @@ def main():
     print("=" * 60)
 
     if not missing_files and not missing_dirs and not failed_modules:
-        print("✓ 所有检查通过！")
+        print("[OK] 所有检查通过！")
         if not docs_synced:
-            print("\n⚠ 文档可能需要同步更新")
+            print("\n[!] 文档可能需要同步更新")
         return 0
     else:
         if missing_files:
-            print(f"\n✗ 缺少 {len(missing_files)} 个文件")
+            print(f"\n[X] 缺少 {len(missing_files)} 个文件")
         if missing_dirs:
-            print(f"\n✗ 缺少 {len(missing_dirs)} 个目录")
+            print(f"\n[X] 缺少 {len(missing_dirs)} 个目录")
         if failed_modules:
-            print(f"\n✗ {len(failed_modules)} 个模块导入失败")
+            print(f"\n[X] {len(failed_modules)} 个模块导入失败")
         return 1
 
 

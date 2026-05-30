@@ -320,3 +320,19 @@ make format     # 格式化
 - pyyaml >= 6.0.0
 - python-dotenv >= 1.0.0
 - playwright
+
+---
+
+## 已知问题
+
+### Windows 终端 Unicode 编码问题
+
+Windows 命令行默认 GBK 编码，无法显示 ✓ ✗ 等 Unicode 字符。代码已使用 `[OK]` / `[X]` 替代。
+
+### 首次运行需要安装浏览器
+
+如果提示下载浏览器失败，手动执行：
+
+```bash
+npx playwright install chromium
+```

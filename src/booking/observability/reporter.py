@@ -64,7 +64,7 @@ class Reporter:
         if recent:
             print("\n最近记录:")
             for record in recent:
-                status_icon = "✓" if record.status == "success" else "✗"
+                status_icon = "[OK]" if record.status == "success" else "[X]"
                 print(f"  {status_icon} {record.account} {record.campus} {record.sport}")
 
     def get_summary(self, days: int = 7) -> dict[str, Any]:

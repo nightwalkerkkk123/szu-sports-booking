@@ -132,8 +132,8 @@ class StepTracker:
         print("-" * 60)
         for i, step in enumerate(summary["steps"], 1):
             status_icon = {
-                "success": "✓",
-                "failed": "✗",
+                "success": "[OK]",
+                "failed": "[X]",
                 "skipped": "-",
                 "pending": "○",
                 "running": "▶",

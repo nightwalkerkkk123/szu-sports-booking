@@ -191,7 +191,7 @@ class BookingPool:
         print(f"执行完成，成功: {success_count}")
         for r in results:
             if r.status == "failed":
-                print(f"  ✗ {r.username}: {r.message}")
+                print(f"  [X] {r.username}: {r.message}")
         print()
 
         return results

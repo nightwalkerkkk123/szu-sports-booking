@@ -368,7 +368,7 @@ class BookingClient:
                                      "不可预约", "已满员", "已达上限"]
                     for kw in fail_keywords:
                         if kw in page_text:
-                            print(f"✗ 预约被拒绝: 页面提示「{kw}」")
+                            print(f"[X] 预约被拒绝: 页面提示「{kw}」")
                             logger.warning("预约被拒绝", extra={"reason": kw})
                             if self._tracker:
                                 self._tracker.step_failed(f"预约被拒绝: {kw}")
@@ -378,7 +378,7 @@ class BookingClient:
                     success_keywords = ["预约成功", "提交成功", "操作成功"]
                     for kw in success_keywords:
                         if kw in page_text:
-                            print("✓ 预约成功（页面确认）")
+                            print("[OK] 预约成功（页面确认）")
                             logger.info("确认预约成功")
                             if self._tracker:
                                 self._tracker.step_success()

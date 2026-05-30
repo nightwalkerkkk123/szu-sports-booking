@@ -153,7 +153,7 @@ class StepBuilder:
                         success = True
 
                     if success:
-                        print(f"  ✓ 成功")
+                        print(f"  [OK] 成功")
                         break
 
                 except Exception as e:
@@ -161,7 +161,7 @@ class StepBuilder:
                     if attempt < retries - 1:
                         print(f"  ! 第 {attempt + 1} 次失败，重试中... ({e})")
                     else:
-                        print(f"  ✗ 失败: {e}")
+                        print(f"  [X] 失败: {e}")
 
             if not success and stop_on_error:
                 return False

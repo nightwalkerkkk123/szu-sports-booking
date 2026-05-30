@@ -103,7 +103,7 @@ class FlexibleSlotSelector:
         available_opts = [o for o in options if o.get("available", True)]
         print(f"可用时间段 ({len(available_opts)}/{len(options)} 个):")
         for i, opt in enumerate(options):
-            status = "✓" if opt.get("available", True) else "✗"
+            status = "[OK]" if opt.get("available", True) else "[X]"
             print(f"  [{i}] {status} {opt['text']} (value: {opt['value']})")
 
         # 根据 target 类型找到匹配项

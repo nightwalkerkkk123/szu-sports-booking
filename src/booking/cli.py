@@ -133,17 +133,17 @@ def run(config, account, dry_run, run_all_flag):
             result = pool.run_until_success(timeout=300)
 
             if result and result.status == "success":
-                click.echo(f"\n✓ 预约成功! 账号: {result.username}")
+                click.echo(f"\n[OK] 预约成功! 账号: {result.username}")
                 run_manager.end_run(success=True)
             else:
-                click.echo("\n✗ 预约失败，所有账号都未能成功")
+                click.echo("\n[X] 预约失败，所有账号都未能成功")
                 run_manager.end_run(success=False, error_message="所有账号都未能成功预约")
     except KeyboardInterrupt:
         click.echo("\n用户中断执行")
         run_manager.end_run(success=False, error_message="用户中断")
         raise click.Abort()
     except Exception as e:
-        click.echo(f"\n✗ 执行出错: {e}")
+        click.echo(f"\n[X] 执行出错: {e}")
         run_manager.end_run(success=False, error_message=str(e))
         raise click.Abort()
 
@@ -183,21 +183,21 @@ def test_login(username, password, headless):
 
         # 登录成功后会跳转到预约页面
         if "sportVenue" in current_url or "lwSzuCgyy" in current_url:
-            click.echo("✓ 登录成功!")
+            click.echo("[OK] 登录成功!")
             result = True
         else:
             # 检查是否有错误提示
             page_content = client.page.content() if hasattr(client, 'page') and client.page else ""
             if "密码错误" in page_content or "password" in page_content.lower():
-                click.echo("✗ 登录失败: 密码错误")
+                click.echo("[X] 登录失败: 密码错误")
             elif "不存在" in page_content or "not exist" in page_content.lower():
-                click.echo("✗ 登录失败: 账号不存在")
+                click.echo("[X] 登录失败: 账号不存在")
             else:
                 click.echo("? 登录状态未知，请手动检查浏览器窗口")
             result = False
 
     except Exception as e:
-        click.echo(f"✗ 登录失败: {e}")
+        click.echo(f"[X] 登录失败: {e}")
         result = False
     finally:
         client.close()
@@ -249,7 +249,7 @@ def report(dir):
     if summary.get("recent_records"):
         click.echo("\n最近10条记录:")
         for record in summary["recent_records"]:
-            status_icon = "✓" if record.get("status") == "success" else "✗"
+            status_icon = "[OK]" if record.get("status") == "success" else "[X]"
             click.echo(f"  {status_icon} {record.get('account', '')}")
 
 
@@ -276,7 +276,7 @@ def trace(trace_id, latest):
 
     try:
         html_path = generate_and_open_report(trace_id, rm)
-        click.echo(f"✓ 报告已生成: {html_path}")
+        click.echo(f"[OK] 报告已生成: {html_path}")
     except ValueError as e:
         click.echo(f"错误: {e}", err=True)
         raise click.Abort()
@@ -298,7 +298,7 @@ def runs(limit):
     click.echo(f"{'Trace ID':<12} {'状态':<10} {'校区':<8} {'项目':<6} {'时间'}")
     click.echo("-" * 60)
     for r in recent:
-        status_icon = {"success": "✓", "failed": "✗", "running": "▶"}.get(r["status"], "?")
+        status_icon = {"success": "[OK]", "failed": "[X]", "running": "▶"}.get(r["status"], "?")
         campus = r.get("campus", "") or "-"
         sport = r.get("sport", "") or "-"
         time_str = r["start_time"][:19].replace("T", " ")
