@@ -34,7 +34,8 @@ def main():
     parser.add_argument("--sport", "-s", help="体育项目")
     parser.add_argument("--date", "-d", type=int, help="日期索引: 0=今天, 1=明天, 2=后天")
     parser.add_argument("--time-slot", "-t", help="时间段")
-    parser.add_argument("--dry-run", action="store_true", help="干跑模式")
+    parser.add_argument("--dry-run", action="store_true", help="干跑模式（模拟浏览器，不访问网络）")
+    parser.add_argument("--query-only", action="store_true", help="仅查询可用时段（不预约）")
     parser.add_argument("--report", action="store_true", help="运行后打开报告")
 
     args = parser.parse_args()
@@ -131,6 +132,10 @@ def main():
         try:
             client.select_time_slot(time_slot)
             run_manager.log_step("选择时间段", "success")
+            if args.query_only:
+                run_manager.end_run(success=True)
+                print("\n[INFO] 查询模式完成，已显示可用时段")
+                return
         except SlotUnavailableError as e:
             run_manager.log_step("选择时间段", "failed", error=str(e))
             raise
