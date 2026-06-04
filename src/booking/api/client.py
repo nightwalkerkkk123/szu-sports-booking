@@ -1,28 +1,26 @@
 """
-API Client for direct backend calls.
+API Client for direct backend calls with anti-detection.
+
+Uses curl_cffi to impersonate Chrome TLS fingerprint.
+Simulates real browser request sequence to avoid bot detection.
 
 Example:
     api = ApiClient()
     api.set_cookies_from_browser(browser)
 
-    # Get available dates
-    dates = api.get_available_dates()
-
     # Get available time slots
     slots = api.get_time_slots(campus=1, date="2026-05-25", sport_code="004")
-
-    # Get available venues
-    venues = api.get_venues(campus=1, date="2026-05-25", sport_code="004",
-                            start_time="12:00", end_time="13:00")
 
     # Book a venue
     result = api.book(venue_wid="xxx", date="2026-05-25", time_slot="12:00-13:00",
                      username="2023150090", name="王子豪", ...)
 """
 import logging
+import random
+import time
 from typing import Optional
 
-import httpx
+from curl_cffi import requests as cffi_requests
 
 from .session import SessionManager
 from .models import TimeSlot, Venue, BookingResponse, BookingRecord
@@ -37,9 +35,10 @@ logger = logging.getLogger("booking.api")
 
 class ApiClient:
     """
-    API client for booking via direct backend calls.
+    API client with anti-detection for booking via direct backend calls.
 
-    Uses httpx for HTTP requests with cookie-based authentication.
+    Uses curl_cffi to impersonate Chrome's TLS fingerprint.
+    Simulates real browser request patterns to avoid bot detection.
     """
 
     BASE_URL = "https://ehall.szu.edu.cn/qljfwapp/sys/lwSzuCgyy"
@@ -47,17 +46,16 @@ class ApiClient:
     def __init__(self, timeout: float = 30.0, proxy: str | None = None):
         self._timeout = timeout
         self._session = SessionManager()
-        kwargs = {
-            "timeout": timeout,
-            "headers": self._session.headers,  # 使用我们的浏览器 headers
-        }
-        if proxy:
-            kwargs["proxy"] = proxy
-        self._http = httpx.Client(**kwargs)
+        self._session_obj = cffi_requests.Session(impersonate="chrome")
+        self._proxy = proxy
+        self._page_visited = False  # 是否已模拟页面访问
 
     def set_cookies(self, cookies: dict):
         """Set cookies for authentication"""
         self._session.set_cookies(cookies)
+        # 同步到 curl_cffi session
+        for name, value in cookies.items():
+            self._session_obj.cookies.set(name, value, domain="ehall.szu.edu.cn")
 
     def set_cookies_from_browser(self, browser_context):
         """Extract cookies from browser context"""
@@ -70,7 +68,41 @@ class ApiClient:
 
     def close(self):
         """Close HTTP client"""
-        self._http.close()
+        self._session_obj.close()
+
+    def _random_delay(self, min_s: float = 0.3, max_s: float = 1.0):
+        """模拟人类操作的随机延迟"""
+        time.sleep(random.uniform(min_s, max_s))
+
+    def _simulate_page_visit(self):
+        """
+        模拟真实用户访问页面的请求序列。
+        先加载主页面和静态资源，再调用 API。
+        """
+        if self._page_visited:
+            return
+
+        try:
+            # 1. 访问主页面
+            self._session_obj.get(
+                f"{self.BASE_URL}/index.do",
+                proxy=self._proxy,
+                timeout=self._timeout,
+            )
+            self._random_delay(0.5, 1.5)
+
+            # 2. 加载初始数据
+            self._session_obj.get(
+                f"{self.BASE_URL}/sportVenue/getSportVenueData.do",
+                proxy=self._proxy,
+                timeout=self._timeout,
+            )
+            self._random_delay(0.3, 0.8)
+
+            self._page_visited = True
+            logger.info("页面访问模拟完成")
+        except Exception as e:
+            logger.warning(f"页面访问模拟失败: {e}")
 
     def _request(
         self,
@@ -79,24 +111,31 @@ class ApiClient:
         data: Optional[dict] = None,
     ) -> dict:
         """
-        Make HTTP request to backend.
+        Make HTTP request with Chrome TLS fingerprint.
 
         Args:
             method: HTTP method (GET, POST)
-            path: API path (e.g. "/sportVenue/getTimeList.do")
+            path: API path
             data: Form data
 
         Returns:
             Response JSON as dict
         """
         url = f"{self.BASE_URL}{path}"
-        headers = {"Cookie": self._session.get_cookie_header()}
+        headers = self._session.headers.copy()
+        headers["Cookie"] = self._session.get_cookie_header()
 
         try:
             if method.upper() == "POST":
-                response = self._http.post(url, data=data, headers=headers)
+                response = self._session_obj.post(
+                    url, data=data, headers=headers,
+                    proxy=self._proxy, timeout=self._timeout,
+                )
             else:
-                response = self._http.get(url, params=data, headers=headers)
+                response = self._session_obj.get(
+                    url, params=data, headers=headers,
+                    proxy=self._proxy, timeout=self._timeout,
+                )
 
             if response.status_code == 401 or response.status_code == 403:
                 raise AuthenticationError("认证失败，请重新登录")
@@ -108,12 +147,6 @@ class ApiClient:
             response.raise_for_status()
             return response.json()
 
-        except httpx.TimeoutException:
-            raise NetworkError("请求超时")
-        except httpx.ConnectError:
-            raise NetworkError("连接失败，请检查网络")
-        except httpx.HTTPStatusError as e:
-            raise NetworkError(f"HTTP错误: {e.response.status_code}")
         except AuthenticationError:
             raise
         except ApiError:
@@ -125,39 +158,25 @@ class ApiClient:
     # ===== Public API Methods =====
 
     def get_available_dates(self) -> list[str]:
-        """
-        Get available booking dates.
-
-        Returns:
-            List of date strings (e.g. ["2026-05-27", "2026-05-28"])
-        """
+        """Get available booking dates."""
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
 
+        self._simulate_page_visit()
         result = self._request("POST", "/sportVenue/getRqList.do")
         if isinstance(result, list):
             return result
         return []
 
     def get_app_settings(self) -> dict:
-        """
-        Get app settings (booking start time, cancel rules, etc.).
-
-        Returns:
-            Dict with settings like YYKS (booking start time), QXYYTQ (cancel minutes)
-        """
+        """Get app settings."""
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
 
         return self._request("POST", "/sportVenue/getAppSets.do")
 
     def get_sport_venue_data(self) -> dict:
-        """
-        Get initial sport venue data (campus list, sport list, venue list).
-
-        Returns:
-            Dict with campusList, xmList, packageVenueList
-        """
+        """Get initial sport venue data."""
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
 
@@ -171,20 +190,11 @@ class ApiClient:
         sport_code: str,
         booking_type: str = "1.0",
     ) -> list[TimeSlot]:
-        """
-        Get available time slots for a sport on a date.
-
-        Args:
-            campus: Campus code (1=粤海, 2=丽湖)
-            date: Date string (YYYY-MM-DD)
-            sport_code: Sport code (004=网球, 001=羽毛球, etc.)
-            booking_type: Booking type (1.0=包场, 2.0=散场)
-
-        Returns:
-            List of TimeSlot objects
-        """
+        """Get available time slots for a sport on a date."""
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
+
+        self._simulate_page_visit()
 
         data = {
             "XQ": str(campus),
@@ -194,6 +204,8 @@ class ApiClient:
         }
 
         logger.info(f"获取时间段: campus={campus}, date={date}, sport={sport_code}, type={booking_type}")
+
+        self._random_delay(0.2, 0.6)
 
         try:
             result = self._request("POST", "/sportVenue/getTimeList.do", data)
@@ -224,20 +236,7 @@ class ApiClient:
         end_time: str,
         booking_type: str = "1.0",
     ) -> list[Venue]:
-        """
-        Get available venues for a time slot.
-
-        Args:
-            campus: Campus code (1=粤海, 2=丽湖)
-            date: Date string (YYYY-MM-DD)
-            sport_code: Sport code (004=网球, etc.)
-            start_time: Start time (e.g. "12:00")
-            end_time: End time (e.g. "13:00")
-            booking_type: Booking type (1.0=包场, 2.0=散场)
-
-        Returns:
-            List of Venue objects
-        """
+        """Get available venues for a time slot."""
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
 
@@ -252,6 +251,8 @@ class ApiClient:
 
         logger.info(f"获取场地: campus={campus}, date={date}, sport={sport_code}, "
                    f"time={start_time}-{end_time}")
+
+        self._random_delay(0.3, 0.8)
 
         try:
             result = self._request("POST", "/modules/sportVenue/getOpeningRoom.do", data)
@@ -283,23 +284,7 @@ class ApiClient:
         venue_area_code: str = "015",
         booking_type: str = "1.0",
     ) -> BookingResponse:
-        """
-        Submit a booking request.
-
-        Args:
-            venue_wid: Venue WID from get_venues()
-            date: Date string (YYYY-MM-DD)
-            time_slot: Time slot (e.g. "12:00-13:00")
-            username: Student ID
-            name: Student name
-            sport_code: Sport code (default: "004" for tennis)
-            campus: Campus code (default: 1 for 粤海)
-            venue_area_code: Venue area code (default: "015")
-            booking_type: Booking type (1.0=包场, 2.0=散场)
-
-        Returns:
-            BookingResponse with success/failure info
-        """
+        """Submit a booking request."""
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
 
@@ -324,6 +309,9 @@ class ApiClient:
 
         logger.info(f"提交预约: venue_wid={venue_wid}, date={date}, "
                    f"time={time_slot}, user={username}")
+
+        # 预约前模拟人类停顿
+        self._random_delay(1.0, 2.5)
 
         try:
             result = self._request(
@@ -359,26 +347,15 @@ class ApiClient:
         page_size: int = 10,
         page_number: int = 1,
     ) -> list[BookingRecord]:
-        """
-        Get booking history for current user.
-
-        Args:
-            page_size: Number of records per page
-            page_number: Page number (1-based)
-
-        Returns:
-            List of BookingRecord objects
-        """
+        """Get booking history for current user."""
         if not self.is_authenticated:
             raise AuthenticationError("请先登录")
 
         try:
-            # First call to get searchMeta
             self._request("POST", "/modules/myBooking.do", data={"*json": "1"})
             self._request("POST", "/modules/myBooking/myBookingInfo.do",
                          data={"*searchMeta": "1"})
 
-            # Then get actual data
             result = self._request("POST", "/modules/myBooking.do", data={"*json": "1"})
             result = self._request(
                 "POST",
