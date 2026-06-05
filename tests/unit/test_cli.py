@@ -1,6 +1,5 @@
 """Tests for booking.cli module - CLI entry point."""
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 
 class TestCLICommands:
@@ -42,8 +41,9 @@ class TestValidateConfigCommand:
 
     def test_validate_config_returns_zero_on_success(self, tmp_path, monkeypatch):
         """validate-config exits with 0 when config is valid."""
-        from booking.cli import validate_config
         from click.testing import CliRunner
+
+        from booking.cli import validate_config
 
         # Create a valid config
         config_file = tmp_path / "config.yaml"
@@ -54,7 +54,7 @@ booking:
   default_sport: "网球"
   default_date_index: 0
   default_time_slot: "19:00-20:00"
-""")
+""", encoding="utf-8")
 
         runner = CliRunner()
         result = runner.invoke(validate_config, ["--config", str(config_file)])
@@ -62,8 +62,9 @@ booking:
 
     def test_validate_config_loads_and_prints_values(self, tmp_path):
         """validate-config loads and displays config values."""
-        from booking.cli import validate_config
         from click.testing import CliRunner
+
+        from booking.cli import validate_config
 
         config_file = tmp_path / "config.yaml"
         config_file.write_text("""
@@ -73,7 +74,7 @@ booking:
   default_sport: "羽毛球"
   default_date_index: 0
   default_time_slot: "20:00-21:00"
-""")
+""", encoding="utf-8")
 
         runner = CliRunner()
         result = runner.invoke(validate_config, ["--config", str(config_file)])
@@ -86,13 +87,14 @@ class TestSmokeCommand:
 
     def test_smoke_command_runs_pytest(self):
         """smoke command runs pytest on smoke tests."""
-        from booking.cli import smoke
         from click.testing import CliRunner
+
+        from booking.cli import smoke
 
         runner = CliRunner()
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
-            result = runner.invoke(smoke)
+            result = runner.invoke(smoke)  # noqa: F841
             # smoke command should call pytest
 
 
@@ -101,8 +103,9 @@ class TestCLIArgumentParsing:
 
     def test_run_command_accepts_account_option(self):
         """run command accepts --account option."""
-        from booking.cli import run
         from click.testing import CliRunner
+
+        from booking.cli import run
 
         runner = CliRunner()
         result = runner.invoke(run, ["--help"])
@@ -110,8 +113,9 @@ class TestCLIArgumentParsing:
 
     def test_run_command_accepts_dry_run_option(self):
         """run command accepts --dry-run option."""
-        from booking.cli import run
         from click.testing import CliRunner
+
+        from booking.cli import run
 
         runner = CliRunner()
         result = runner.invoke(run, ["--help"])

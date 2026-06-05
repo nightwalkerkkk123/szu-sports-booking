@@ -1,5 +1,4 @@
 """Tests for booking.account module - Account management."""
-import pytest
 from datetime import datetime, timedelta
 
 

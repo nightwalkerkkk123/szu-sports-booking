@@ -1,9 +1,11 @@
 """
 步骤构建器 - 支持重试和错误处理的流程执行
 """
-from typing import Callable, Optional, List
-from .chain_builder import Chain
+from collections.abc import Callable
+
 from playwright.sync_api import Page
+
+from .chain_builder import Chain
 
 
 class StepBuilder:
@@ -121,7 +123,7 @@ class StepBuilder:
                 try:
                     action = step.get("action")
                     if action is None:
-                        print(f"  (无操作，跳过)")
+                        print("  (无操作，跳过)")
                         success = True
                         break
 
@@ -153,11 +155,11 @@ class StepBuilder:
                         success = True
 
                     if success:
-                        print(f"  [OK] 成功")
+                        print("  [OK] 成功")
                         break
 
                 except Exception as e:
-                    last_error = e
+                    last_error = e  # noqa: F841
                     if attempt < retries - 1:
                         print(f"  ! 第 {attempt + 1} 次失败，重试中... ({e})")
                     else:
@@ -176,6 +178,6 @@ class StepBuilder:
 
         return True
 
-    def get_history(self) -> List[tuple]:
+    def get_history(self) -> list[tuple]:
         """获取操作历史"""
         return self.chain.history

@@ -1,0 +1,3 @@
+# 排除 skill 自己的 .env (含凭证)
+# 即使项目根 .gitignore 失效, 这一层仍保护
+.env

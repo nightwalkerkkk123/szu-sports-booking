@@ -1,8 +1,9 @@
 """
 灵活时间段选择器 - 支持多种匹配方式
 """
-from typing import Union, Optional, List
-from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
+
+from playwright.sync_api import Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 
 class SlotUnavailableError(Exception):
@@ -64,7 +65,7 @@ class FlexibleSlotSelector:
 
     def select(
         self,
-        target: Union[str, int] = None,
+        target: str | int = None,
         *,
         index: int = None,
         contains: str = None,
@@ -135,7 +136,7 @@ class FlexibleSlotSelector:
             return True
         return False
 
-    def get_all(self, container_selector: str = None, check_availability: bool = True) -> List[dict]:
+    def get_all(self, container_selector: str = None, check_availability: bool = True) -> list[dict]:
         """
         获取所有可用时间段
 
@@ -198,17 +199,17 @@ class FlexibleSlotSelector:
 
         except Exception as e:
             print(f"获取时间段失败: {e}")
-            raise SlotUnavailableError(f"获取时间段失败: {e}")
+            raise SlotUnavailableError(f"获取时间段失败: {e}") from e
 
     def _find_matched_option(
         self,
-        options: List[dict],
-        target: Union[str, int] = None,
+        options: list[dict],
+        target: str | int = None,
         index: int = None,
         contains: str = None,
         regex: str = None,
         value: str = None
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """找到匹配的时间段选项"""
         import re
 

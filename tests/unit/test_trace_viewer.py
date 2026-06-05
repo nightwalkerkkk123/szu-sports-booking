@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from booking.observability.trace_viewer import generate_trace_html, generate_report_html
+from booking.observability.trace_viewer import generate_report_html, generate_trace_html
 
 
 class TestTraceViewer:
@@ -87,7 +87,7 @@ class TestTraceViewer:
         ]
 
         log_file = log_dir / "booking.json.log"
-        with open(log_file, "w") as f:
+        with open(log_file, "w", encoding="utf-8") as f:
             for entry in log_data:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 

@@ -1,5 +1,5 @@
 """Tests for StepTracker."""
-from booking.observability.step_tracker import StepTracker, Step
+from booking.observability.step_tracker import Step, StepTracker
 
 
 class TestStep:

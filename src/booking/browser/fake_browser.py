@@ -1,5 +1,4 @@
 """Fake browser for testing without real browser."""
-from typing import Optional, Any
 
 
 class FakeBrowserLifecycle:

@@ -1,6 +1,5 @@
 """Browser lifecycle abstraction."""
 from abc import ABC, abstractmethod
-from typing import Optional
 
 
 class BrowserLifecycle(ABC):
@@ -72,4 +71,4 @@ class BrowserPool:
 
 
 # Import concrete implementation
-from booking.browser.cloak_adapter import CloakBrowserLifecycle
+from booking.browser.cloak_adapter import CloakBrowserLifecycle  # noqa: E402

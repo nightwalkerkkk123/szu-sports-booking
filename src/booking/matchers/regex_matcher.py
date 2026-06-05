@@ -1,6 +1,6 @@
 """Regex matcher for pattern-based matching."""
 import re
-from typing import Pattern
+from re import Pattern
 
 
 class RegexMatcher:

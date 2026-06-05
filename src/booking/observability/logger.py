@@ -6,7 +6,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-
 # Global logger instances registry
 _loggers: dict[str, "Logger"] = {}
 

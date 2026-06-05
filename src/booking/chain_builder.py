@@ -3,8 +3,9 @@
 支持文本、索引、正则、包含等多种匹配方式
 """
 import logging
-from typing import Union, Optional, List
-from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
+
+from playwright.sync_api import Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 logger = logging.getLogger("booking")
 
@@ -28,7 +29,7 @@ class Chain:
 
     def click(
         self,
-        target: Union[str, int] = None,
+        target: str | int = None,
         *,
         index: int = None,
         contains: str = None,
@@ -127,7 +128,7 @@ class Chain:
             print(f"选择 radio 失败: {e}")
         return self
 
-    def get_all(self, container_selector: str = "div.group") -> List[dict]:
+    def get_all(self, container_selector: str = "div.group") -> list[dict]:
         """获取所有可用选项"""
         try:
             containers = self.page.query_selector_all(container_selector)
@@ -165,7 +166,7 @@ class Chain:
 
     def _find_element(
         self,
-        target: Union[str, int] = None,
+        target: str | int = None,
         index: int = None,
         contains: str = None,
         regex: str = None,
@@ -208,7 +209,7 @@ class Chain:
             for selector in selectors:
                 try:
                     return self.page.wait_for_selector(selector, state="visible", timeout=timeout // len(selectors))
-                except:
+                except:  # noqa: E722
                     continue
             return None
         except Exception as e:
@@ -246,7 +247,7 @@ class Chain:
             for selector in selectors:
                 try:
                     return self.page.wait_for_selector(selector, state="visible", timeout=timeout // len(selectors))
-                except:
+                except:  # noqa: E722
                     continue
             return None
         except Exception as e:

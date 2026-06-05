@@ -1,7 +1,4 @@
 """Tests for booking.observability.tracer module - Distributed tracing."""
-import pytest
-from unittest.mock import patch, MagicMock
-import uuid
 
 
 class TestTraceIdGeneration:
@@ -35,8 +32,9 @@ class TestTraceContext:
 
     def test_trace_context_has_start_time(self):
         """TraceContext has start_time."""
-        from booking.observability.tracer import TraceContext, generate_trace_id
         import time
+
+        from booking.observability.tracer import TraceContext, generate_trace_id
 
         start = time.time()
         ctx = TraceContext(generate_trace_id())
@@ -64,8 +62,9 @@ class TestTraceContextDuration:
 
     def test_duration_is_elapsed_time(self):
         """duration property returns elapsed time in ms."""
-        from booking.observability.tracer import TraceContext, generate_trace_id
         import time
+
+        from booking.observability.tracer import TraceContext, generate_trace_id
 
         ctx = TraceContext(generate_trace_id())
         time.sleep(0.01)  # 10ms
@@ -97,7 +96,7 @@ class TestTracer:
 
     def test_tracer_can_set_active_context(self):
         """Tracer can set active context."""
-        from booking.observability.tracer import Tracer, TraceContext, generate_trace_id
+        from booking.observability.tracer import TraceContext, Tracer, generate_trace_id
 
         tracer = Tracer()
         ctx = TraceContext(generate_trace_id())

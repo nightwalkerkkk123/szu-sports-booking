@@ -2,7 +2,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional
 
 
 class AccountStatus(Enum):
@@ -36,8 +35,8 @@ class Account:
     status: AccountStatus = AccountStatus.AVAILABLE
     priority: int = 1
     consecutive_failures: int = 0
-    last_used: Optional[datetime] = None
-    cooldown_until: Optional[datetime] = None
+    last_used: datetime | None = None
+    cooldown_until: datetime | None = None
     metadata: dict = field(default_factory=dict)
 
     def is_available(self) -> bool:
@@ -133,7 +132,7 @@ class AccountManager:
         self._accounts.append(account)
         return account
 
-    def get_available_account(self) -> Optional[Account]:
+    def get_available_account(self) -> Account | None:
         """
         Get the next available account.
 
@@ -155,7 +154,7 @@ class AccountManager:
         """Get all accounts."""
         return list(self._accounts)
 
-    def get_account_by_username(self, username: str) -> Optional[Account]:
+    def get_account_by_username(self, username: str) -> Account | None:
         """Get account by username."""
         for account in self._accounts:
             if account.username == username:

@@ -1,12 +1,11 @@
 """Retry policy and strategies for booking system."""
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, TypeVar
+from typing import TypeVar
 
-import time
-
-from booking.errors import ErrorCode, ERROR_MAP
-
+from booking.errors import ERROR_MAP, ErrorCode
 
 T = TypeVar('T')
 
@@ -109,4 +108,4 @@ def retry_with_policy(
                 time.sleep(delay)
 
             attempt += 1
-            last_error = e
+            last_error = e  # noqa: F841

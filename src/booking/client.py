@@ -3,11 +3,11 @@
 整合浏览器管理、登录、选择器等功能
 """
 import logging
-from typing import Union, Optional
+
 from .chain_builder import Chain, ClickError
-from .step_builder import StepBuilder
 from .selectors.slot_selector import FlexibleSlotSelector, SlotUnavailableError
 from .selectors.venue_selector import FlexibleVenueSelector
+from .step_builder import StepBuilder
 
 logger = logging.getLogger("booking.client")
 
@@ -186,7 +186,7 @@ class BookingClient:
         # 1. 登出 CAS
         try:
             logout_url = "https://authserver.szu.edu.cn/authserver/logout"
-            print(f"登出中...")
+            print("登出中...")
             self.page.goto(logout_url)
             self.page.wait_for_load_state("domcontentloaded", timeout=10000)
         except Exception:
@@ -224,9 +224,9 @@ class BookingClient:
                 element.click()
                 print(f"已点击: {name}")
                 logger.info("选择校区", extra={"campus": name})
-            except Exception as e:
+            except Exception:
                 print(f"未找到元素: {name}")
-                raise ClickError(f"未找到元素: {name}")
+                raise ClickError(f"未找到元素: {name}") from None
         else:
             self.chain.click_first()
 
@@ -245,9 +245,9 @@ class BookingClient:
                 element.click()
                 print(f"已点击: {name}")
                 logger.info("选择项目", extra={"sport": name})
-            except Exception as e:
+            except Exception:
                 print(f"未找到元素: {name}")
-                raise ClickError(f"未找到元素: {name}")
+                raise ClickError(f"未找到元素: {name}") from None
         else:
             self.chain.click_first()
 
@@ -296,7 +296,7 @@ class BookingClient:
 
         return self.wait(1)
 
-    def select_date(self, selector: Union[int, str] = 0) -> "BookingClient":
+    def select_date(self, selector: int | str = 0) -> "BookingClient":
         """
         选择日期
 
@@ -310,7 +310,7 @@ class BookingClient:
 
     def select_time_slot(
         self,
-        target: Union[str, int] = None,
+        target: str | int = None,
         *,
         index: int = None,
         contains: str = None,
@@ -388,7 +388,7 @@ class BookingClient:
                     print("? 预约状态未知，未检测到成功或失败提示")
                     logger.warning("预约状态未知")
                     return False
-                except:
+                except:  # noqa: E722
                     continue
 
             print("未找到确认按钮")

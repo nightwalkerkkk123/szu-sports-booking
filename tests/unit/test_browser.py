@@ -1,5 +1,5 @@
 """Tests for browser abstraction layer."""
-from booking.browser.fake_browser import FakeBrowserLifecycle, FakePage, FakeKeyboard
+from booking.browser.fake_browser import FakeBrowserLifecycle, FakeKeyboard, FakePage
 
 
 class TestFakeBrowserLifecycle:

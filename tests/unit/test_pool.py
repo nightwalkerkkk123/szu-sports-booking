@@ -1,7 +1,6 @@
 """Tests for BookingPool."""
-import pytest
 
-from booking.pool import BookingPool, Account, BookingResult, AccountSession
+from booking.pool import Account, AccountSession, BookingPool, BookingResult
 
 
 class TestBookingPool:

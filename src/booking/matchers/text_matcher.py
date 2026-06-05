@@ -1,6 +1,4 @@
 """Text matcher for exact string matching."""
-import re
-from typing import Pattern
 
 
 class TextMatcher:

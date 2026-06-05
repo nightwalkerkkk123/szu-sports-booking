@@ -1,9 +1,6 @@
 """Tests for RunManager."""
 import json
-import uuid
 from pathlib import Path
-
-import pytest
 
 from booking.observability.run_manager import RunManager, RunRecord, get_run_manager
 
@@ -71,7 +68,7 @@ class TestRunManager:
         log_file = Path(record.run_dir) / "run.json.log"
         assert log_file.exists()
 
-        lines = log_file.read_text().strip().split("\n")
+        lines = log_file.read_text(encoding="utf-8").strip().split("\n")
         assert len(lines) == 3
 
         entries = [json.loads(line) for line in lines]
@@ -93,7 +90,7 @@ class TestRunManager:
         steps_file = Path(rm.current_run.run_dir) / "steps.json"
         assert steps_file.exists()
 
-        steps = json.loads(steps_file.read_text())
+        steps = json.loads(steps_file.read_text(encoding="utf-8"))
         assert len(steps) == 3
         assert steps[0]["step"] == "初始化浏览器"
         assert steps[0]["status"] == "success"
@@ -111,7 +108,7 @@ class TestRunManager:
         rm.save_summary(summary)
 
         summary_file = Path(rm.current_run.run_dir) / "summary.json"
-        data = json.loads(summary_file.read_text())
+        data = json.loads(summary_file.read_text(encoding="utf-8"))
         assert data == summary
 
     def test_query_runs(self, tmp_path):
@@ -136,7 +133,7 @@ class TestRunManager:
     def test_query_runs_offset(self, tmp_path):
         """query_runs 分页"""
         rm = RunManager(base_dir=str(tmp_path / "runs"))
-        for i in range(5):
+        for i in range(5):  # noqa: B007
             rm.start_run()
             rm.end_run(success=True)
 
@@ -146,7 +143,7 @@ class TestRunManager:
     def test_get_run_by_trace(self, tmp_path):
         """get_run_by_trace 通过 trace_id 查询"""
         rm = RunManager(base_dir=str(tmp_path / "runs"))
-        record = rm.start_run(trace_id="abc-123")
+        record = rm.start_run(trace_id="abc-123")  # noqa: F841
 
         run = rm.get_run_by_trace("abc-123")
         assert run is not None

@@ -1,6 +1,5 @@
 """Tests for booking.errors module - ErrorCode and ERROR_MAP."""
-import pytest
-from booking.errors import ErrorCode, ErrorInfo, ERROR_MAP
+from booking.errors import ERROR_MAP, ErrorCode, ErrorInfo
 
 
 class TestErrorCode:

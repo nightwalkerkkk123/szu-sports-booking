@@ -1,8 +1,5 @@
 """Tests for booking.observability.logger module - Structured logging."""
-import logging
-import pytest
-from unittest.mock import patch, MagicMock
-from datetime import datetime
+from unittest.mock import patch
 
 
 class TestLoggerInit:

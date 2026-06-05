@@ -1,8 +1,8 @@
 """Pytest configuration and shared fixtures."""
-import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -35,7 +35,7 @@ logging:
   dir: "logs"
   rotation: "daily"
   retention_days: 7
-""")
+""", encoding="utf-8")
     return str(config_path)
 
 

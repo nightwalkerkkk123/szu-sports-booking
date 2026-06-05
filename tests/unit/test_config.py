@@ -1,7 +1,7 @@
 """Tests for booking.config module - Configuration management."""
-import os
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 class TestConfigLoad:
@@ -80,7 +80,7 @@ accounts:
   - username: "2023150090"
     default_campus: "丽湖校区"
     default_sport: "羽毛球"
-""")
+""", encoding="utf-8")
         # env 会创建空的 default Config（accounts=[]），
         # 修复后应该不覆盖 yaml 的 accounts
         config = Config.load(str(config_path))
@@ -126,9 +126,9 @@ class TestConfigDataclass:
         """Config is a dataclass."""
         import sys
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-        from booking.config import Config
-
         from dataclasses import is_dataclass
+
+        from booking.config import Config
         assert is_dataclass(Config)
 
     def test_config_immutable(self, mock_env):
@@ -138,5 +138,5 @@ class TestConfigDataclass:
         from booking.config import Config
 
         config = Config.from_defaults()
-        with pytest.raises(Exception):  # frozen dataclass should raise
+        with pytest.raises(Exception):  # frozen dataclass should raise  # noqa: B017
             config.default_campus = "changed"

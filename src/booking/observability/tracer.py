@@ -101,7 +101,7 @@ def query_trace(trace_id: str, log_dir: str = "logs/booking") -> dict[str, Any] 
         return None
 
     entries = []
-    with open(log_path) as f:
+    with open(log_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -143,7 +143,7 @@ def print_trace(trace_id: str, log_dir: str = "logs/booking") -> None:
     print()
 
     for entry in trace["entries"]:
-        timestamp = entry.get("timestamp", "")
+        timestamp = entry.get("timestamp", "")  # noqa: F841
         level = entry.get("level", "")
         message = entry.get("message", "")
 

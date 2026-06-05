@@ -1,6 +1,5 @@
 """Tests for StepBuilder."""
 from unittest.mock import MagicMock
-import pytest
 
 from booking.step_builder import StepBuilder
 

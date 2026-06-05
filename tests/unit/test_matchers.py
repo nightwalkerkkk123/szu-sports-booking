@@ -1,20 +1,19 @@
 """Tests for matchers module."""
-import pytest
 
 from booking.matchers import (
-    TextMatcher,
-    ExactMatcher,
-    RegexMatcher,
-    TimeSlotMatcher,
-    ContainsMatcher,
-    PrefixMatcher,
-    SuffixMatcher,
-    CompositeMatcher,
-    AnyOfMatcher,
     AllOfMatcher,
+    AnyOfMatcher,
+    CompositeMatcher,
+    ContainsMatcher,
+    ExactMatcher,
+    PrefixMatcher,
+    RegexMatcher,
+    SuffixMatcher,
+    TextMatcher,
+    TimeSlotMatcher,
+    create_campus_matcher,
     create_flexible_matcher,
     create_time_slot_matcher,
-    create_campus_matcher,
 )
 
 

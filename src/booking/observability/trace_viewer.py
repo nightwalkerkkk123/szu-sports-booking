@@ -16,7 +16,7 @@ def generate_trace_html(trace_id: str, entries: list[dict[str, Any]], output_pat
         The HTML content as a string
     """
     # Group entries by level
-    level_colors = {
+    level_colors = {  # noqa: F841
         "DEBUG": "#6c757d",
         "INFO": "#0d6efd",
         "WARNING": "#ffc107",
@@ -196,7 +196,7 @@ def generate_report_html(trace_ids: list[str], log_dir: str = "logs/booking", ou
 
     # Read all log entries
     all_entries: dict[str, list[dict]] = {}
-    with open(log_path) as f:
+    with open(log_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:

@@ -1,10 +1,8 @@
 """Local data storage using SQLite."""
+import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
-
-import sqlite3
 
 
 def _register_datetime_adapter() -> None:
@@ -23,14 +21,14 @@ _register_datetime_adapter()
 class BookingRecord:
     """Record of a booking attempt."""
 
-    id: Optional[int]
+    id: int | None
     trace_id: str
     account: str
     campus: str
     sport: str
     time_slot: str
     status: str  # "success" or "failed"
-    error_code: Optional[str]
+    error_code: str | None
     duration_ms: int
     timestamp: datetime
 
@@ -87,7 +85,7 @@ class Database:
                 record.timestamp,
             ))
 
-    def get_records_by_account(self, account: str, limit: int = 100) -> List[BookingRecord]:
+    def get_records_by_account(self, account: str, limit: int = 100) -> list[BookingRecord]:
         """Get booking records for a specific account."""
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute("""
@@ -99,7 +97,7 @@ class Database:
             """, (account, limit)).fetchall()
             return [BookingRecord(*row) for row in rows]
 
-    def get_recent_records(self, limit: int = 50) -> List[BookingRecord]:
+    def get_recent_records(self, limit: int = 50) -> list[BookingRecord]:
         """Get most recent booking records."""
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute("""

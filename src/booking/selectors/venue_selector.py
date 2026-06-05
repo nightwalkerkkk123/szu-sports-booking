@@ -1,8 +1,8 @@
 """
 灵活场地选择器 - 支持多级选择（场馆类型 -> 具体场地）
 """
-from typing import Union, Optional, List
-from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 
 class FlexibleVenueSelector:
@@ -74,7 +74,7 @@ class FlexibleVenueSelector:
         """选择第一个场地"""
         return self.select(index=0)
 
-    def get_all(self, container_selector: str = None) -> List[dict]:
+    def get_all(self, container_selector: str = None) -> list[dict]:
         """
         获取所有可用场地
 
@@ -134,12 +134,12 @@ class FlexibleVenueSelector:
 
     def _find_matched_venue(
         self,
-        venues: List[dict],
+        venues: list[dict],
         venue_name: str = None,
         index: int = None,
         contains: str = None,
         regex: str = None
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """找到匹配的场地"""
         import re
 
@@ -226,10 +226,10 @@ class VenueHierarchySelector:
         """一步选择完整的场地名称"""
         return self.venue_selector.select(full_name)
 
-    def get_categories(self) -> List[dict]:
+    def get_categories(self) -> list[dict]:
         """获取所有场馆类型"""
         return self.category_selector.get_all()
 
-    def get_venues(self) -> List[dict]:
+    def get_venues(self) -> list[dict]:
         """获取所有具体场地"""
         return self.venue_selector.get_all()

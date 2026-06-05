@@ -1,10 +1,7 @@
 """HTML report generator for run reports."""
-import json
 import platform
 import subprocess
-from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 
 def generate_html_report(

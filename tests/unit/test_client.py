@@ -1,9 +1,7 @@
 """Tests for BookingClient."""
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 
+from booking.browser.fake_browser import FakeBrowserLifecycle
 from booking.client import BookingClient
-from booking.browser.fake_browser import FakeBrowserLifecycle, FakePage
 
 
 class TestBookingClientBasic:

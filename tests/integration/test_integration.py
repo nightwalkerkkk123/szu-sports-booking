@@ -1,7 +1,5 @@
 """Integration tests for booking system - Module interactions."""
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 class TestConfigAndAccountIntegration:
@@ -9,10 +7,10 @@ class TestConfigAndAccountIntegration:
 
     def test_config_loaded_for_account_operations(self):
         """Config is used in account operations."""
-        from booking.config import Config
         from booking.account import AccountManager
+        from booking.config import Config
 
-        config = Config.from_defaults()
+        config = Config.from_defaults()  # noqa: F841
         manager = AccountManager()
 
         # Add account with config defaults
@@ -33,10 +31,9 @@ class TestAccountAndRetryIntegration:
         """Account failures are tracked for retry decisions."""
         from booking.account import Account
         from booking.retry import RetryPolicy
-        from booking.errors import ErrorCode
 
         account = Account(username="test", password="pass")
-        policy = RetryPolicy(max_attempts=3)
+        policy = RetryPolicy(max_attempts=3)  # noqa: F841
 
         # Simulate 3 failures (triggers cooldown)
         account.mark_failure()
@@ -64,8 +61,8 @@ class TestRetryAndErrorIntegration:
 
     def test_retry_policy_with_all_error_codes(self):
         """RetryPolicy handles all error codes correctly."""
-        from booking.retry import RetryPolicy
         from booking.errors import ErrorCode
+        from booking.retry import RetryPolicy
 
         policy = RetryPolicy(max_attempts=3)
 
@@ -123,69 +120,64 @@ class TestDatabaseAndAccountIntegration:
         assert record.account == "user1"
         assert record.status == "success"
 
-    def test_database_stores_multiple_records(self):
+    def test_database_stores_multiple_records(self, tmp_path):
         """Database can store and retrieve multiple records."""
-        from booking.database import Database, BookingRecord
-        import tempfile
-        import os
+        import os  # noqa: F401
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            db_path = os.path.join(tmpdir, "test.db")
-            db = Database(db_path)
+        from booking.database import BookingRecord, Database
 
-            for i in range(5):
-                record = BookingRecord(
-                    id=None,
-                    trace_id=f"trace-{i}",
-                    account="user1",
-                    campus="粤海校区",
-                    sport="网球",
-                    time_slot="19:00-20:00",
-                    status="success" if i % 2 == 0 else "failed",
-                    error_code=None,
-                    duration_ms=1000,
-                    timestamp=datetime.now()
-                )
-                db.insert_record(record)
+        db_path = str(tmp_path / "test.db")
+        db = Database(db_path)
 
-            records = db.get_records_by_account("user1")
-            assert len(records) == 5
+        for i in range(5):
+            record = BookingRecord(
+                id=None,
+                trace_id=f"trace-{i}",
+                account="user1",
+                campus="粤海校区",
+                sport="网球",
+                time_slot="19:00-20:00",
+                status="success" if i % 2 == 0 else "failed",
+                error_code=None,
+                duration_ms=1000,
+                timestamp=datetime.now()
+            )
+            db.insert_record(record)
+
+        records = db.get_records_by_account("user1")
+        assert len(records) == 5
 
 
 class TestCLIAndConfigIntegration:
     """Test CLI and config integration."""
 
-    def test_validate_config_displays_loaded_values(self):
+    def test_validate_config_displays_loaded_values(self, tmp_path):
         """validate-config shows config values."""
-        from booking.cli import validate_config
         from click.testing import CliRunner
-        import tempfile
-        import os
 
-        runner = CliRunner()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = os.path.join(tmpdir, "config.yaml")
-            with open(config_path, "w") as f:
-                f.write("""
+        from booking.cli import validate_config
+
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text("""
 booking:
   venue_url: "https://ehall.szu.edu.cn/test"
   default_campus: "丽湖校区"
   default_sport: "羽毛球"
   default_date_index: 1
   default_time_slot: "20:00-21:00"
-""")
-            result = runner.invoke(validate_config, ["--config", config_path])
-            assert result.exit_code == 0
-            assert "丽湖校区" in result.output
-            assert "羽毛球" in result.output
-
+""", encoding="utf-8")
+        runner = CliRunner()
+        result = runner.invoke(validate_config, ["--config", str(config_path)])
+        assert result.exit_code == 0
+        assert "丽湖校区" in result.output
+        assert "羽毛球" in result.output
 
 class TestObservabilityIntegration:
     """Test observability components work together."""
 
     def test_tracer_and_logger_integration(self):
         """Tracer and Logger can be used together."""
-        from booking.observability import Logger, Tracer, get_tracer
+        from booking.observability import Logger, get_tracer
 
         logger = Logger("test_integration")
         tracer = get_tracer()
@@ -242,11 +234,11 @@ class TestEndToEndScenarios:
     def test_booking_failure_and_recovery_flow(self):
         """Simulates failure tracking and recovery."""
         from booking.account import Account, AccountStatus
-        from booking.retry import RetryPolicy, BookingError
         from booking.errors import ErrorCode
+        from booking.retry import BookingError, RetryPolicy
 
         account = Account(username="test", password="pass")
-        policy = RetryPolicy(max_attempts=3, base_delay=0.001)
+        policy = RetryPolicy(max_attempts=3, base_delay=0.001)  # noqa: F841
 
         # Simulate failures
         call_count = 0

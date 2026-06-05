@@ -1,5 +1,4 @@
 """CloakBrowser adapter for browser lifecycle."""
-from typing import Optional
 
 from booking.browser.lifecycle import BrowserLifecycle
 

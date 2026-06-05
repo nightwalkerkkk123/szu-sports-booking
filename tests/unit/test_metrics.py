@@ -1,7 +1,4 @@
 """Tests for booking.observability.metrics module - Metrics collection."""
-import pytest
-from unittest.mock import patch
-import time
 
 
 class TestMetricsCollector:

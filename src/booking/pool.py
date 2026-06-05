@@ -2,10 +2,10 @@
 多账号调度池 - 支持并发多账号预约
 """
 import logging
-import time
 import threading
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import List, Optional, Callable, Dict
 from datetime import datetime
 
 logger = logging.getLogger("booking.pool")
@@ -52,20 +52,20 @@ class BookingPool:
 
     def __init__(self, max_concurrent: int = 3, dry_run: bool = False,
                  trace_id: str = None):
-        self.accounts: List[Account] = []
+        self.accounts: list[Account] = []
         self.max_concurrent = max_concurrent
         self._dry_run = dry_run
         self._trace_id = trace_id
         self._config: dict = {}
-        self.results: Dict[str, BookingResult] = {}
+        self.results: dict[str, BookingResult] = {}
         self._current_index = 0
         self._lock = threading.Lock()
         self._stop_flag = False
 
         # 回调函数
-        self._on_success: Optional[Callable] = None
-        self._on_failed: Optional[Callable] = None
-        self._on_progress: Optional[Callable] = None
+        self._on_success: Callable | None = None
+        self._on_failed: Callable | None = None
+        self._on_progress: Callable | None = None
 
     @property
     def config(self) -> dict:
@@ -149,7 +149,7 @@ class BookingPool:
         self._on_progress = callback
         return self
 
-    def run_all(self, concurrent: bool = True) -> List[BookingResult]:
+    def run_all(self, concurrent: bool = True) -> list[BookingResult]:
         """
         并发运行所有账号
 
@@ -196,7 +196,7 @@ class BookingPool:
 
         return results
 
-    def run_until_success(self, timeout: int = 300) -> Optional[BookingResult]:
+    def run_until_success(self, timeout: int = 300) -> BookingResult | None:
         """
         运行直到某个账号成功
 
@@ -247,31 +247,31 @@ class BookingPool:
                 print("所有账号都尝试过，等待5秒后重试...")
                 time.sleep(5)
 
-        print(f"\n超时，所有账号都未能成功预约")
+        print("\n超时，所有账号都未能成功预约")
         return None
 
     def stop(self):
         """停止执行"""
         self._stop_flag = True
 
-    def get_results(self) -> Dict[str, BookingResult]:
+    def get_results(self) -> dict[str, BookingResult]:
         """获取所有结果"""
         return self.results
 
-    def get_current_account(self) -> Optional[Account]:
+    def get_current_account(self) -> Account | None:
         """获取当前账号"""
         if self.accounts:
             return self.accounts[self._current_index % len(self.accounts)]
         return None
 
-    def next_account(self) -> Optional[Account]:
+    def next_account(self) -> Account | None:
         """切换到下一个账号"""
         if self.accounts:
             self._current_index = (self._current_index + 1) % len(self.accounts)
             return self.accounts[self._current_index]
         return None
 
-    def _run_account(self, account: Account, results: List[BookingResult],
+    def _run_account(self, account: Account, results: list[BookingResult],
                      task_index: int = 1):
         """运行单个账号"""
         result = self._execute_account(account, task_index=task_index)
@@ -282,7 +282,7 @@ class BookingPool:
 
         使用 BookingClient 执行实际的预约逻辑。
         """
-        T = f"[任务{task_index}]"
+        T = f"[任务{task_index}]"  # noqa: N806
         try:
             from .client import BookingClient
             from .selectors.slot_selector import SlotUnavailableError
@@ -446,7 +446,7 @@ class BookingPool:
     def from_config_file(self, filepath: str) -> "BookingPool":
         """从配置文件加载"""
         import json
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             data = json.load(f)
 
         # 加载账号

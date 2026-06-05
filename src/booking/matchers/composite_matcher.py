@@ -1,9 +1,9 @@
 """Composite matcher for combining multiple matchers."""
-from typing import Callable
+from collections.abc import Callable
 
+from booking.matchers.contains_matcher import ContainsMatcher, PrefixMatcher
+from booking.matchers.regex_matcher import TimeSlotMatcher
 from booking.matchers.text_matcher import TextMatcher
-from booking.matchers.regex_matcher import RegexMatcher, TimeSlotMatcher
-from booking.matchers.contains_matcher import ContainsMatcher, PrefixMatcher, SuffixMatcher
 
 
 class CompositeMatcher:

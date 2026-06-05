@@ -1,5 +1,6 @@
 """Tests for ChainBuilder."""
 from unittest.mock import MagicMock
+
 import pytest
 
 from booking.chain_builder import Chain, ClickError

@@ -1,5 +1,4 @@
 """Smoke tests for booking system - End-to-end verification."""
-import pytest
 
 
 class TestCLISmoke:
@@ -13,6 +12,7 @@ class TestCLISmoke:
     def test_cli_help_command(self):
         """CLI --help works."""
         from click.testing import CliRunner
+
         from booking.cli import cli
 
         runner = CliRunner()
@@ -20,29 +20,25 @@ class TestCLISmoke:
         assert result.exit_code == 0
         assert "深圳大学体育馆预约工具" in result.output
 
-    def test_validate_config_command_exists(self):
-        """validate-config command exists and works."""
+    def test_validate_config_command_exists(self, tmp_path):
+        """validate-config command works with valid config."""
         from click.testing import CliRunner
-        from booking.cli import validate_config
-        import tempfile
-        import os
 
-        runner = CliRunner()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = os.path.join(tmpdir, "config.yaml")
-            with open(config_path, "w") as f:
-                f.write("""
+        from booking.cli import validate_config
+
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text("""
 booking:
   venue_url: "https://test.example.com"
   default_campus: "粤海校区"
   default_sport: "网球"
   default_date_index: 0
   default_time_slot: "19:00-20:00"
-""")
-            result = runner.invoke(validate_config, ["--config", config_path])
-            assert result.exit_code == 0
-            assert "配置有效" in result.output
-
+""", encoding="utf-8")
+        runner = CliRunner()
+        result = runner.invoke(validate_config, ["--config", str(config_path)])
+        assert result.exit_code == 0
+        assert "配置有效" in result.output
 
 class TestObservabilitySmoke:
     """Smoke tests for observability components."""
@@ -91,7 +87,7 @@ class TestCoreModulesSmoke:
 
     def test_errors_have_error_map(self):
         """Error codes have ErrorInfo mapping."""
-        from booking.errors import ErrorCode, ERROR_MAP
+        from booking.errors import ERROR_MAP, ErrorCode
 
         assert ErrorCode.LOGIN_FAILED in ERROR_MAP
         info = ERROR_MAP[ErrorCode.LOGIN_FAILED]
@@ -105,16 +101,13 @@ class TestCoreModulesSmoke:
         assert policy.max_attempts == 3
         assert policy.strategy == RetryStrategy.EXPONENTIAL_BACKOFF
 
-    def test_database_can_be_created(self):
+    def test_database_can_be_created(self, tmp_path):
         """Database can be instantiated."""
         from booking.database import Database
-        import tempfile
-        import os
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            db_path = os.path.join(tmpdir, "test.db")
-            db = Database(db_path)
-            assert db is not None
+        db_path = str(tmp_path / "test.db")
+        db = Database(db_path)
+        assert db is not None
 
 
 class TestModuleIntegration:
@@ -125,13 +118,13 @@ class TestModuleIntegration:
         from booking.account import AccountManager
 
         manager = AccountManager()
-        account = manager.add_account("user1", "pass1")
+        account = manager.add_account("user1", "pass1")  # noqa: F841
         assert manager.get_account_by_username("user1") is not None
 
     def test_retry_policy_respects_error_map(self):
         """RetryPolicy checks error retryability."""
-        from booking.retry import RetryPolicy
         from booking.errors import ErrorCode
+        from booking.retry import RetryPolicy
 
         policy = RetryPolicy()
         # CAPTCHA_REQUIRED is not retryable
