@@ -1,4 +1,5 @@
 """Tests for booking.account module - Account management."""
+
 from datetime import datetime, timedelta
 
 

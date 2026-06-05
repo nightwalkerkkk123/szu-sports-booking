@@ -4,6 +4,7 @@ We use a fake UIBooker (just a class with a `book` method) and a fake
 BackendRouter (we set last_signals directly) so the escape hatch is
 tested in isolation.
 """
+
 from __future__ import annotations
 
 import sys
@@ -61,14 +62,23 @@ def test_blocked_risk_invokes_ui():
     ui = FakeUIBooker(return_value={"success": True, "venue": "网1"})
     hatch = BrowserEscapeHatch(ui_booker=ui, router=FakeRouter(sig))
     out = hatch.maybe_escape(
-        date="2026-05-28", time_slot="19:00-20:00", sport="网球", campus="粤海校区", name="张三",
+        date="2026-05-28",
+        time_slot="19:00-20:00",
+        sport="网球",
+        campus="粤海校区",
+        name="张三",
     )
     assert out.invoked
     assert out.ui_result == {"success": True, "venue": "网1"}
-    assert ui.calls == [{
-        "date": "2026-05-28", "time_slot": "19:00-20:00",
-        "sport": "网球", "campus": "粤海校区", "name": "张三",
-    }]
+    assert ui.calls == [
+        {
+            "date": "2026-05-28",
+            "time_slot": "19:00-20:00",
+            "sport": "网球",
+            "campus": "粤海校区",
+            "name": "张三",
+        }
+    ]
 
 
 def test_ui_exception_is_captured():

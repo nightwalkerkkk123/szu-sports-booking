@@ -22,6 +22,7 @@ Selection rules (default):
 If every backend is exhausted, we return the last response we got. The
 caller is expected to check `response.error` and the global risk score.
 """
+
 from __future__ import annotations
 
 import logging
@@ -141,7 +142,9 @@ class BackendRouter:
             if backend_score >= self._per_backend_suspect:
                 logger.debug(
                     "skip %s: per-backend risk %d >= %d",
-                    backend.name, backend_score, self._per_backend_suspect,
+                    backend.name,
+                    backend_score,
+                    self._per_backend_suspect,
                 )
                 continue
 
@@ -162,9 +165,7 @@ class BackendRouter:
             except BackendUnavailable as e:
                 logger.warning("backend %s unavailable: %s", backend.name, e)
                 self._trip_breaker(backend.name, now)
-                last_response = HttpResponse(
-                    status_code=0, error=str(e), backend=backend.name
-                )
+                last_response = HttpResponse(status_code=0, error=str(e), backend=backend.name)
                 continue
 
             last_response = resp
@@ -181,8 +182,10 @@ class BackendRouter:
             # If the response is healthy, we're done.
             if resp.is_ok and not signals_g.suspect:
                 self._last_decision = RouteDecision(
-                    backend_used=backend.name, attempts=attempts,
-                    signals=signals_g, fell_back=fell_back,
+                    backend_used=backend.name,
+                    attempts=attempts,
+                    signals=signals_g,
+                    fell_back=fell_back,
                 )
                 return resp, self._last_decision
 
@@ -192,7 +195,9 @@ class BackendRouter:
             if signals_g.blocked:
                 logger.warning(
                     "blocked signal: backend=%s score=%d reasons=%s",
-                    backend.name, signals_g.score, signals_g.reasons,
+                    backend.name,
+                    signals_g.score,
+                    signals_g.reasons,
                 )
                 self._trip_breaker(backend.name, now)
                 break
@@ -203,7 +208,9 @@ class BackendRouter:
             if signals_g.suspect:
                 logger.warning(
                     "suspect signal: backend=%s score=%d reasons=%s; falling back",
-                    backend.name, signals_g.score, signals_g.reasons,
+                    backend.name,
+                    signals_g.score,
+                    signals_g.reasons,
                 )
                 self._trip_breaker(backend.name, now)
                 continue
@@ -212,7 +219,9 @@ class BackendRouter:
             # next backend if there is one.
             logger.debug(
                 "backend %s returned non-ok (status=%d, score=%d); falling through",
-                backend.name, resp.status_code, signals_g.score,
+                backend.name,
+                resp.status_code,
+                signals_g.score,
             )
 
         # No backend succeeded; return whatever we last got.

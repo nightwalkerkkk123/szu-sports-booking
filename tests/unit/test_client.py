@@ -109,9 +109,7 @@ class TestBookingClientRunSteps:
         fake = FakeBrowserLifecycle()
         fake.launch()
         client.set_browser(fake)
-        steps = [
-            {"action": "wait", "target": 0.01}
-        ]
+        steps = [{"action": "wait", "target": 0.01}]
         result = client.run_steps(steps)
         assert result is True
 

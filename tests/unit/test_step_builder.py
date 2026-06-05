@@ -1,4 +1,5 @@
 """Tests for StepBuilder."""
+
 from unittest.mock import MagicMock
 
 from booking.step_builder import StepBuilder
@@ -210,10 +211,7 @@ class TestStepBuilderChain:
         """链式定义步骤"""
         page = MagicMock()
         builder = StepBuilder(page)
-        builder \
-            .step("步骤1").click("按钮1") \
-            .step("步骤2").click(index=0) \
-            .step("步骤3").wait(1.0)
+        builder.step("步骤1").click("按钮1").step("步骤2").click(index=0).step("步骤3").wait(1.0)
 
         assert len(builder.steps) == 3
         assert builder.steps[0]["action"][0] == "click"

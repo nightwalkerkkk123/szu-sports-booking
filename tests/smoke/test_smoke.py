@@ -7,6 +7,7 @@ class TestCLISmoke:
     def test_cli_can_import(self):
         """CLI module can be imported."""
         from booking.cli import cli
+
         assert cli is not None
 
     def test_cli_help_command(self):
@@ -27,18 +28,22 @@ class TestCLISmoke:
         from booking.cli import validate_config
 
         config_path = tmp_path / "config.yaml"
-        config_path.write_text("""
+        config_path.write_text(
+            """
 booking:
   venue_url: "https://test.example.com"
   default_campus: "粤海校区"
   default_sport: "网球"
   default_date_index: 0
   default_time_slot: "19:00-20:00"
-""", encoding="utf-8")
+""",
+            encoding="utf-8",
+        )
         runner = CliRunner()
         result = runner.invoke(validate_config, ["--config", str(config_path)])
         assert result.exit_code == 0
         assert "配置有效" in result.output
+
 
 class TestObservabilitySmoke:
     """Smoke tests for observability components."""

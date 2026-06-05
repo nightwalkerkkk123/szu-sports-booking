@@ -7,6 +7,7 @@ Supports multi-level configuration:
 4. config.yaml
 5. Default values (lowest priority)
 """
+
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -116,6 +117,7 @@ class Config:
         """自动加载 .env 文件到 os.environ。"""
         try:
             from dotenv import load_dotenv
+
             load_dotenv()
         except ImportError:
             pass

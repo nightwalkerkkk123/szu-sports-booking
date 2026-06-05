@@ -1,4 +1,5 @@
 """Structured logging for booking system."""
+
 import json
 import logging
 import sys
@@ -53,9 +54,7 @@ class Logger:
         # Console handler - human readable
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(getattr(logging, self.level.upper()))
-        console_formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)s | %(message)s"
-        )
+        console_formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
         console_handler.setFormatter(console_formatter)
         self._logger.addHandler(console_handler)
 

@@ -1,4 +1,5 @@
 """Matcher modules for flexible element matching."""
+
 from booking.matchers.composite_matcher import (
     AllOfMatcher,
     AnyOfMatcher,

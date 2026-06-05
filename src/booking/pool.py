@@ -1,6 +1,7 @@
 """
 多账号调度池 - 支持并发多账号预约
 """
+
 import logging
 import threading
 import time
@@ -14,6 +15,7 @@ logger = logging.getLogger("booking.pool")
 @dataclass
 class BookingResult:
     """预约结果"""
+
     username: str
     status: str  # success / failed / timeout / pending
     message: str = ""
@@ -28,6 +30,7 @@ class BookingResult:
 @dataclass
 class Account:
     """账号"""
+
     username: str
     password: str
     priority: int = 1
@@ -50,8 +53,7 @@ class BookingPool:
         result = pool.run_until_success()
     """
 
-    def __init__(self, max_concurrent: int = 3, dry_run: bool = False,
-                 trace_id: str = None):
+    def __init__(self, max_concurrent: int = 3, dry_run: bool = False, trace_id: str = None):
         self.accounts: list[Account] = []
         self.max_concurrent = max_concurrent
         self._dry_run = dry_run
@@ -72,8 +74,9 @@ class BookingPool:
         """获取配置属性"""
         return self._config
 
-    def add_account(self, username: str, password: str, config: dict = None,
-                    **metadata) -> "BookingPool":
+    def add_account(
+        self, username: str, password: str, config: dict = None, **metadata
+    ) -> "BookingPool":
         """添加账号
 
         参数:
@@ -86,12 +89,9 @@ class BookingPool:
         priority = metadata.pop("priority", 1)
         if config:
             metadata["config"] = config
-        self.accounts.append(Account(
-            username=username,
-            password=password,
-            priority=priority,
-            metadata=metadata
-        ))
+        self.accounts.append(
+            Account(username=username, password=password, priority=priority, metadata=metadata)
+        )
         return self
 
     def _get_merged_config(self, account: Account) -> dict:
@@ -118,18 +118,14 @@ class BookingPool:
         return self
 
     def add_account_with_config(
-        self,
-        username: str,
-        password: str,
-        config: dict = None,
-        **metadata
+        self, username: str, password: str, config: dict = None, **metadata
     ) -> "BookingPool":
         """添加账号（带独立配置）"""
         account = Account(
             username=username,
             password=password,
             priority=metadata.pop("priority", 1),
-            metadata={**metadata, "config": config or {}}
+            metadata={**metadata, "config": config or {}},
         )
         self.accounts.append(account)
         return self
@@ -171,10 +167,7 @@ class BookingPool:
             # 并发执行
             threads = []
             for i, account in enumerate(self.accounts, 1):
-                t = threading.Thread(
-                    target=self._run_account,
-                    args=(account, results, i)
-                )
+                t = threading.Thread(target=self._run_account, args=(account, results, i))
                 t.daemon = True
                 t.start()
                 threads.append(t)
@@ -187,7 +180,7 @@ class BookingPool:
                 self._run_account(account, results)
 
         print("=" * 60)
-        success_count = sum(1 for r in results if r.status == 'success')
+        success_count = sum(1 for r in results if r.status == "success")
         print(f"执行完成，成功: {success_count}")
         for r in results:
             if r.status == "failed":
@@ -271,8 +264,7 @@ class BookingPool:
             return self.accounts[self._current_index]
         return None
 
-    def _run_account(self, account: Account, results: list[BookingResult],
-                     task_index: int = 1):
+    def _run_account(self, account: Account, results: list[BookingResult], task_index: int = 1):
         """运行单个账号"""
         result = self._execute_account(account, task_index=task_index)
         results.append(result)
@@ -287,12 +279,13 @@ class BookingPool:
             from .client import BookingClient
             from .selectors.slot_selector import SlotUnavailableError
 
-            print(f"{T} 正在执行: {account.username} → {account.metadata.get('config', {}).get('default_sport', '?')}")
+            print(
+                f"{T} 正在执行: {account.username} → {account.metadata.get('config', {}).get('default_sport', '?')}"
+            )
             logger.info("开始执行账号", extra={"username": account.username, "task": task_index})
 
             # 创建 BookingClient
-            client = BookingClient(use_fake_browser=self._dry_run,
-                                      trace_id=self._trace_id)
+            client = BookingClient(use_fake_browser=self._dry_run, trace_id=self._trace_id)
 
             # _ensure_browser() 内部已处理 launch，无需再调用
             client._ensure_browser()
@@ -322,7 +315,7 @@ class BookingPool:
                     username=account.username,
                     status="failed",
                     message=f"选择校区失败: {e}",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
 
             # 选择项目
@@ -334,7 +327,7 @@ class BookingPool:
                     username=account.username,
                     status="failed",
                     message=f"选择项目失败: {e}",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
 
             # 选择日期
@@ -346,7 +339,7 @@ class BookingPool:
                     username=account.username,
                     status="failed",
                     message=f"选择日期失败: {e}",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
 
             # 选择时间段
@@ -358,14 +351,14 @@ class BookingPool:
                     username=account.username,
                     status="failed",
                     message=f"时间段不可用: {e}",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
             except Exception as e:
                 return BookingResult(
                     username=account.username,
                     status="failed",
                     message=f"时间段选择失败: {e}",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
 
             # 选择场地
@@ -377,14 +370,14 @@ class BookingPool:
                     username=account.username,
                     status="failed",
                     message=f"场地不可用: {e}",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
             except Exception as e:
                 return BookingResult(
                     username=account.username,
                     status="failed",
                     message=f"场地选择失败: {e}",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
 
             # 确认预约
@@ -395,7 +388,7 @@ class BookingPool:
                     username=account.username,
                     status="failed",
                     message=f"确认预约失败: {e}",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
 
             client.wait(2)
@@ -406,21 +399,21 @@ class BookingPool:
                     username=account.username,
                     status="success",
                     message="预约完成",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
             else:
                 return BookingResult(
                     username=account.username,
                     status="failed",
                     message="预约被拒绝或状态未知",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
             return BookingResult(
                 username=account.username,
                 status="success",
                 message="预约完成",
                 details={"logged": True},
-                time_slot=time_slot
+                time_slot=time_slot,
             )
 
         except SlotUnavailableError as e:
@@ -428,14 +421,14 @@ class BookingPool:
                 username=account.username,
                 status="failed",
                 message=f"时间段/场地不可用: {e}",
-                time_slot=self.config.get("time_slot", "")
+                time_slot=self.config.get("time_slot", ""),
             )
         except Exception as e:
             return BookingResult(
                 username=account.username,
                 status="failed",
                 message=str(e),
-                time_slot=self.config.get("time_slot", "")
+                time_slot=self.config.get("time_slot", ""),
             )
 
     def _report_progress(self, username: str, status: str, result: BookingResult):
@@ -446,6 +439,7 @@ class BookingPool:
     def from_config_file(self, filepath: str) -> "BookingPool":
         """从配置文件加载"""
         import json
+
         with open(filepath, encoding="utf-8") as f:
             data = json.load(f)
 
@@ -462,12 +456,12 @@ class BookingPool:
     def to_config_file(self, filepath: str):
         """保存配置到文件"""
         import json
+
         data = {
             "accounts": [
-                {"username": acc.username, "password": acc.password}
-                for acc in self.accounts
+                {"username": acc.username, "password": acc.password} for acc in self.accounts
             ],
-            "global_config": self._config
+            "global_config": self._config,
         }
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
@@ -483,8 +477,7 @@ class AccountSession:
         result = session.run()
     """
 
-    def __init__(self, username: str, password: str, session_id: str = None,
-                 dry_run: bool = False):
+    def __init__(self, username: str, password: str, session_id: str = None, dry_run: bool = False):
         self.username = username
         self.password = password
         self.session_id = session_id or f"session_{username}"
@@ -605,7 +598,7 @@ class AccountSession:
                     username=self.username,
                     status="success",
                     message="预约完成",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
                 print("=" * 50)
                 print(f"预约成功: {self.username}")
@@ -614,7 +607,7 @@ class AccountSession:
                     username=self.username,
                     status="failed",
                     message="预约被拒绝或状态未知",
-                    time_slot=time_slot
+                    time_slot=time_slot,
                 )
                 print("=" * 50)
                 print(f"预约失败: {self.username}")
@@ -627,7 +620,7 @@ class AccountSession:
         finally:
             # 确保浏览器关闭
             try:
-                if 'client' in locals():
+                if "client" in locals():
                     client.close()
             except Exception:
                 pass
@@ -636,10 +629,7 @@ class AccountSession:
         """生成失败结果"""
         self._status = "completed"
         self._result = BookingResult(
-            username=self.username,
-            status="failed",
-            message=message,
-            time_slot=time_slot
+            username=self.username, status="failed", message=message, time_slot=time_slot
         )
         print(f"预约失败: {message}")
         print("=" * 50)

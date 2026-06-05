@@ -1,4 +1,5 @@
 """Tests for slot selector and venue selector."""
+
 from unittest.mock import MagicMock
 
 from booking.selectors.slot_selector import (
@@ -7,8 +8,9 @@ from booking.selectors.slot_selector import (
 )
 
 
-def _make_container(color_style=None, has_rectangle=False, has_frame_child=False,
-                    has_ellipse=False):
+def _make_container(
+    color_style=None, has_rectangle=False, has_frame_child=False, has_ellipse=False
+):
     """Helper: create a mock container element."""
     container = MagicMock()
 
@@ -95,7 +97,7 @@ class TestFlexibleSlotSelectorIsAvailable:
         container = _make_container(
             color_style="color: rgb(134, 144, 156)",  # 不可用
             has_rectangle=True,
-            has_ellipse=True
+            has_ellipse=True,
         )
         selector = FlexibleSlotSelector(MagicMock())
 

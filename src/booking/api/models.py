@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class TimeSlot(BaseModel):
     """时间段数据模型"""
+
     wid: str = Field(alias="WID")
     code: str = Field(alias="CODE")  # "08:00-09:00"
     name: str = Field(alias="NAME")
@@ -26,6 +27,7 @@ class TimeSlot(BaseModel):
 
 class Venue(BaseModel):
     """场地数据模型"""
+
     wid: str = Field(alias="WID")
     name: str = Field(alias="CDMC")  # "北区网球1号场"
     campus_code: str = Field(alias="XQDM")  # "1"
@@ -63,6 +65,7 @@ class Venue(BaseModel):
 
 class BookingRequest(BaseModel):
     """预约请求数据模型"""
+
     dhid: str = ""  # 空
     yy_rgh: str  # 学号
     cyrs: str = ""  # 空
@@ -81,6 +84,7 @@ class BookingRequest(BaseModel):
 
 class BookingResponse(BaseModel):
     """预约响应数据模型"""
+
     code: str  # "0" 表示成功
     message: str | None = None
     datas: dict | None = None
@@ -93,6 +97,7 @@ class BookingResponse(BaseModel):
 
 class BookingRecord(BaseModel):
     """预约记录数据模型"""
+
     wid: str = Field(alias="WID")
     order_id: str = Field(default="", alias="DHID")  # 订单号
     sport_name: str = Field(default="", alias="XMDM_DISPLAY")  # "二楼有氧健身"
@@ -102,7 +107,9 @@ class BookingRecord(BaseModel):
     campus_name: str = Field(default="", alias="XQWID_DISPLAY")  # "粤海校区"
     time_slot: str = Field(default="", alias="YYSJD")  # "2026-05-25 19:00~2026-05-25 20:00"
     status: str = Field(default="", alias="YYZT")  # "CG_DQR" 待确认 / "CG_WC" 已完成 / "CG_QX" 取消
-    status_display: str = Field(default="", alias="YYZT_DISPLAY")  # "待确认" / "已完成" / "取消预约"
+    status_display: str = Field(
+        default="", alias="YYZT_DISPLAY"
+    )  # "待确认" / "已完成" / "取消预约"
     booking_type: str = Field(default="", alias="YYLX")
     username: str = Field(default="", alias="YYRGH")
     created_at: str = Field(default="", alias="CJSJ")  # "2026-05-24 20:50:09"

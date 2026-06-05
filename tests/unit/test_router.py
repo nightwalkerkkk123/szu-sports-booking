@@ -4,6 +4,7 @@ These tests do not hit the network. We construct HTTPBackend subclasses
 that return canned responses so we can exercise the router's decision
 logic in isolation.
 """
+
 from __future__ import annotations
 
 import sys
@@ -37,8 +38,7 @@ class FakeBackend(HTTPBackend):
     def request(self, method, url, headers=None, body=None, timeout=None):
         self.calls.append((method, url))
         if not self._script:
-            return HttpResponse(status_code=599, error="script exhausted",
-                                backend=self.name)
+            return HttpResponse(status_code=599, error="script exhausted", backend=self.name)
         nxt = self._script.pop(0)
         if nxt == "RAISE":
             raise BackendUnavailable(f"{self.name} down")
@@ -129,6 +129,7 @@ def test_all_backends_fail_returns_last_response():
 def test_post_skips_httpx_backend():
     """Write methods must not use the no-fingerprint HttpxBackend."""
     from booking.infra.backends import HttpxBackend
+
     a = FakeBackend("a", [_ok()])
     h = HttpxBackend()  # would 200 but is excluded by the policy
     r = BackendRouter([a, h])
@@ -159,6 +160,7 @@ def test_breaker_cooldown_expires():
     r = BackendRouter([a], breaker_cooldown=0.05)  # 50ms
     r.request("GET", "https://x/1")
     import time
+
     time.sleep(0.1)
     resp, decision = r.request("GET", "https://x/2")
     assert decision.backend_used == "a"

@@ -1,4 +1,5 @@
 """Account management for booking system."""
+
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -124,11 +125,7 @@ class AccountManager:
         Returns:
             The newly created Account.
         """
-        account = Account(
-            username=username,
-            password=password,
-            metadata=metadata
-        )
+        account = Account(username=username, password=password, metadata=metadata)
         self._accounts.append(account)
         return account
 

@@ -2,6 +2,7 @@
 
 Run:  pytest tests/unit/test_risk_scorer.py -v
 """
+
 from __future__ import annotations
 
 import sys
@@ -59,11 +60,13 @@ def test_rate_limit_body_fragments_trigger_high_score():
 def test_rate_limit_plus_other_signal_hits_suspect_threshold():
     """Rate-limit alone is +50; combine with an empty-body or 5xx to hit 70."""
     s = RiskScorer()
-    out = s.observe(_resp(
-        status_code=200,
-        body='{"msg":"操作过于频繁","code":"E111080000000"}',  # +50
-        elapsed_ms=10,                                          # +20 fast
-    ))
+    out = s.observe(
+        _resp(
+            status_code=200,
+            body='{"msg":"操作过于频繁","code":"E111080000000"}',  # +50
+            elapsed_ms=10,  # +20 fast
+        )
+    )
     # 50 + 20 = 70 -> SUSPECT threshold reached.
     assert out.score >= SUSPECT_THRESHOLD
     assert out.suspect
@@ -85,10 +88,12 @@ def test_401_with_no_set_cookie_triggers_signal():
 
 def test_redirect_to_captcha_path_triggers_signal():
     s = RiskScorer()
-    out = s.observe(_resp(
-        status_code=302,
-        headers={"Location": "https://example.com/captcha?token=abc"},
-    ))
+    out = s.observe(
+        _resp(
+            status_code=302,
+            headers={"Location": "https://example.com/captcha?token=abc"},
+        )
+    )
     assert any("challenge" in r for r in out.reasons)
 
 
@@ -130,11 +135,13 @@ def test_blocked_threshold_uses_max_not_average():
     for _ in range(5):
         s.observe(_resp(status_code=200, body='{"ok":1}'))
     # One catastrophic response
-    out = s.observe(_resp(
-        status_code=403,
-        headers={},
-        body='{"msg":"操作过于频繁","code":"E111080000000"}',
-    ))
+    out = s.observe(
+        _resp(
+            status_code=403,
+            headers={},
+            body='{"msg":"操作过于频繁","code":"E111080000000"}',
+        )
+    )
     assert out.score >= BLOCKED_THRESHOLD, f"score={out.score}, expected >= {BLOCKED_THRESHOLD}"
     assert out.blocked
 
@@ -151,13 +158,15 @@ def test_reset_clears_state():
 def test_score_clamps_to_100():
     """A pathological response with every signal firing should be clamped."""
     s = RiskScorer()
-    out = s.observe(_resp(
-        status_code=403,
-        headers={},
-        body="操作过于频繁 E111080000000",
-        elapsed_ms=1,
-        error="also transport error",
-    ))
+    out = s.observe(
+        _resp(
+            status_code=403,
+            headers={},
+            body="操作过于频繁 E111080000000",
+            elapsed_ms=1,
+            error="also transport error",
+        )
+    )
     assert 0 <= out.score <= 100
 
 

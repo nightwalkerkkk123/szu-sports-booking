@@ -25,6 +25,7 @@ a fresh scorer instance starts at zero. The router can construct one per
 session, or one shared across the process, depending on what it wants to
 track.
 """
+
 from __future__ import annotations
 
 import logging
@@ -250,9 +251,12 @@ class RiskScorer:
         # The catch: this should NOT fire if the body itself contains an
         # error code or rate-limit fragment, because then the JSON is
         # well-formed but the response is hostile.
-        already_hostile = any(label.startswith(
-            ("rate-limit", "SZU error", "http-403", "http-401", "redirect to challenge")
-        ) for _, label in deltas)
+        already_hostile = any(
+            label.startswith(
+                ("rate-limit", "SZU error", "http-403", "http-401", "redirect to challenge")
+            )
+            for _, label in deltas
+        )
         if (
             response.status_code == 200
             and body

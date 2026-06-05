@@ -10,6 +10,7 @@ it only verifies that:
 
 Run:  pytest tests/smoke/test_infra_backends.py -v
 """
+
 from __future__ import annotations
 
 import socket

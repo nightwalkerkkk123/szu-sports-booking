@@ -24,6 +24,7 @@ Usage:
     if we_got_rate_limited:
         limiter.record_penalty("2023150090", cooldown_seconds=300)
 """
+
 from __future__ import annotations
 
 import json
@@ -39,10 +40,10 @@ logger = logging.getLogger("booking.infra.rate_limiter")
 # Default policy. The numbers come from the PRD's "Implementation Decisions"
 # section. They are intentionally conservative.
 DEFAULT_STEADY_RATE = 1.0 / 3.0  # 1 request per 3 seconds
-DEFAULT_BURST = 2               # allow short bursts up to 2
+DEFAULT_BURST = 2  # allow short bursts up to 2
 DEFAULT_PENALTY_RATE = 1.0 / 10.0  # 1 request per 10 seconds
 DEFAULT_PENALTY_DURATION = 30 * 60  # 30 minutes at penalty rate
-DEFAULT_COOLDOWN_SECONDS = 5 * 60   # 5 minute hard cooldown after a violation
+DEFAULT_COOLDOWN_SECONDS = 5 * 60  # 5 minute hard cooldown after a violation
 
 
 @dataclass(frozen=True)
@@ -54,11 +55,11 @@ class RateLimitState:
     """
 
     account: str
-    tokens: float                      # current token-bucket level
-    last_refill_at: float              # monotonic-ish timestamp (seconds)
-    cool_until: float = 0.0            # 0 = not cooling; > 0 = cool until this time
-    penalty_until: float = 0.0         # 0 = not in penalty mode; > 0 = penalty until this time
-    violation_count: int = 0           # for diagnostics / future tuning
+    tokens: float  # current token-bucket level
+    last_refill_at: float  # monotonic-ish timestamp (seconds)
+    cool_until: float = 0.0  # 0 = not cooling; > 0 = cool until this time
+    penalty_until: float = 0.0  # 0 = not in penalty mode; > 0 = penalty until this time
+    violation_count: int = 0  # for diagnostics / future tuning
     last_violation_at: float = 0.0
 
 
@@ -193,7 +194,8 @@ class AccountRateLimiter:
         self._save()
         logger.warning(
             "rate-limit violation for %s: cooldown %.0fs, penalty until %s",
-            account, cd,
+            account,
+            cd,
             time.strftime("%H:%M:%S", time.localtime(now + cd + self._penalty_duration)),
         )
 

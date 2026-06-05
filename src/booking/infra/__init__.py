@@ -17,6 +17,7 @@ Public entry points:
     BackendRouter         - strategy + fallback chain
     BrowserEscapeHatch    - last-resort UI booking when HTTP fails
 """
+
 from .backends import (
     BackendUnavailable,
     CurlCffiBackend,

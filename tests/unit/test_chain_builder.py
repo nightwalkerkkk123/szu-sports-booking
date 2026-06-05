@@ -1,4 +1,5 @@
 """Tests for ChainBuilder."""
+
 from unittest.mock import MagicMock
 
 import pytest

@@ -10,6 +10,7 @@ does not handle UI errors specially, and it does not own any state.
 The orchestrator that holds both the router and the UI client is
 responsible for calling us at the right time and reacting to the result.
 """
+
 from __future__ import annotations
 
 import logging
@@ -30,8 +31,9 @@ class _UIBooker(Protocol):
     the real BookingClient at construction time.
     """
 
-    def book(self, date: str, time_slot: str, sport: str, campus: str, name: str | None = None) -> dict:
-        ...
+    def book(
+        self, date: str, time_slot: str, sport: str, campus: str, name: str | None = None
+    ) -> dict: ...
 
 
 @dataclass(frozen=True)
@@ -108,11 +110,16 @@ class BrowserEscapeHatch:
 
         logger.warning(
             "invoking UI escape hatch (risk=%d reasons=%s)",
-            sig.score, sig.reasons,
+            sig.score,
+            sig.reasons,
         )
         try:
             ui_result = self._ui.book(
-                date=date, time_slot=time_slot, sport=sport, campus=campus, name=name,
+                date=date,
+                time_slot=time_slot,
+                sport=sport,
+                campus=campus,
+                name=name,
             )
         except Exception as e:  # noqa: BLE001
             logger.error("UI escape hatch failed: %s", e)

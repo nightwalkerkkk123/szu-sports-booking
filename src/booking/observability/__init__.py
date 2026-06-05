@@ -1,4 +1,5 @@
 """Observability modules."""
+
 from booking.observability.logger import Logger, get_logger
 from booking.observability.metrics import (
     Counter,

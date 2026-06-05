@@ -1,4 +1,5 @@
 """Distributed tracing for booking system."""
+
 import json
 import time
 import uuid
@@ -31,11 +32,13 @@ class TraceContext:
 
     def event(self, name: str, **kwargs: Any) -> None:
         """Add an event to the trace."""
-        self.events.append({
-            "name": name,
-            "timestamp": time.time(),
-            **kwargs,
-        })
+        self.events.append(
+            {
+                "name": name,
+                "timestamp": time.time(),
+                **kwargs,
+            }
+        )
 
     @property
     def duration(self) -> int:
@@ -150,8 +153,11 @@ def print_trace(trace_id: str, log_dir: str = "logs/booking") -> None:
         print(f"[{level}] {message}")
 
         # Print extra fields
-        extras = {k: v for k, v in entry.items()
-                  if k not in ("timestamp", "level", "logger", "message", "trace_id")}
+        extras = {
+            k: v
+            for k, v in entry.items()
+            if k not in ("timestamp", "level", "logger", "message", "trace_id")
+        }
         if extras:
             for k, v in extras.items():
                 print(f"         {k}: {v}")

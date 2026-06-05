@@ -1,4 +1,5 @@
 """Metrics collection for booking system."""
+
 from dataclasses import dataclass, field
 from typing import Any
 

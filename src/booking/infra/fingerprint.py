@@ -8,6 +8,7 @@ The current ruleset matches Chrome 148 on macOS because that is what the
 existing curl_cffi code was producing (we confirmed it in the HAR). Adjust
 DEFAULT_CHROME_VERSION if we ever want a different baseline.
 """
+
 from __future__ import annotations
 
 import os
@@ -71,9 +72,14 @@ class FingerprintComposer:
 
     # --- internal helpers ------------------------------------------------
 
-    _FINGERPRINT_FIELDS = frozenset({
-        "user-agent", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
-    })
+    _FINGERPRINT_FIELDS = frozenset(
+        {
+            "user-agent",
+            "sec-ch-ua",
+            "sec-ch-ua-mobile",
+            "sec-ch-ua-platform",
+        }
+    )
 
     def _base_headers(self, url: str) -> dict[str, str]:
         out: dict[str, str] = {}
@@ -100,9 +106,7 @@ class FingerprintComposer:
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 f"Chrome/{v}.0.0.0 Safari/537.36"
             ),
-            "sec-ch-ua": (
-                f'"Chromium";v="{v}", "Google Chrome";v="{v}", "Not/A)Brand";v="99"'
-            ),
+            "sec-ch-ua": (f'"Chromium";v="{v}", "Google Chrome";v="{v}", "Not/A)Brand";v="99"'),
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": f'"{self.platform}"',
         }

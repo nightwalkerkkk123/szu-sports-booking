@@ -10,6 +10,7 @@ process that uses github.com/enetx/surf for Chrome TLS impersonation;
 CurlCffiBackend uses the Python curl_cffi library directly; HttpxBackend
 uses httpx with no fingerprinting and is the universal fallback.
 """
+
 from __future__ import annotations
 
 import abc
@@ -328,7 +329,9 @@ class SurfProxyBackend(HTTPBackend):
         try:
             data = r.json()
         except ValueError as e:
-            return HttpResponse(status_code=0, error=f"non-json from surf-proxy: {e}", backend=self.name)
+            return HttpResponse(
+                status_code=0, error=f"non-json from surf-proxy: {e}", backend=self.name
+            )
 
         # Transport-level error from surf-proxy: status_code==0 with an error field.
         if data.get("status_code", 0) == 0 and data.get("error"):

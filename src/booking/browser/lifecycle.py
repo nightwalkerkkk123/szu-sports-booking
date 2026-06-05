@@ -1,4 +1,5 @@
 """Browser lifecycle abstraction."""
+
 from abc import ABC, abstractmethod
 
 

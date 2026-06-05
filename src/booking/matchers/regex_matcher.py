@@ -1,4 +1,5 @@
 """Regex matcher for pattern-based matching."""
+
 import re
 from re import Pattern
 

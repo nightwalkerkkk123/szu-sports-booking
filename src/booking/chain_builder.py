@@ -2,6 +2,7 @@
 链式选择器 - 高度抽象的页面交互接口
 支持文本、索引、正则、包含等多种匹配方式
 """
+
 import logging
 
 from playwright.sync_api import Page
@@ -12,6 +13,7 @@ logger = logging.getLogger("booking")
 
 class ClickError(Exception):
     """Raised when click operation fails."""
+
     pass
 
 
@@ -34,7 +36,7 @@ class Chain:
         index: int = None,
         contains: str = None,
         regex: str = None,
-        timeout: int = 10000
+        timeout: int = 10000,
     ) -> "Chain":
         """
         点击元素，支持多种匹配方式
@@ -53,11 +55,7 @@ class Chain:
             Chain(page).click(regex=r"\\d{2}:\\d{2}")   # 正则匹配时间格式
         """
         element = self._find_element(
-            target=target,
-            index=index,
-            contains=contains,
-            regex=regex,
-            timeout=timeout
+            target=target, index=index, contains=contains, regex=regex, timeout=timeout
         )
 
         if element:
@@ -89,6 +87,7 @@ class Chain:
     def wait(self, seconds: float) -> "Chain":
         """等待指定秒数"""
         import time
+
         time.sleep(seconds)
         return self
 
@@ -134,16 +133,16 @@ class Chain:
             containers = self.page.query_selector_all(container_selector)
             options = []
             for container in containers:
-                text_el = container.query_selector(
-                    'div[class*="text"], span[class*="text"], label'
-                )
+                text_el = container.query_selector('div[class*="text"], span[class*="text"], label')
                 radio = container.query_selector('input[type="radio"]')
                 if text_el:
-                    options.append({
-                        "text": text_el.text_content().strip(),
-                        "value": radio.get_attribute("value") if radio else None,
-                        "element": container
-                    })
+                    options.append(
+                        {
+                            "text": text_el.text_content().strip(),
+                            "value": radio.get_attribute("value") if radio else None,
+                            "element": container,
+                        }
+                    )
             return options
         except Exception as e:
             print(f"获取选项失败: {e}")
@@ -170,7 +169,7 @@ class Chain:
         index: int = None,
         contains: str = None,
         regex: str = None,
-        timeout: int = 10000
+        timeout: int = 10000,
     ):
         """根据匹配方式找到元素"""
         # 索引优先
@@ -208,7 +207,9 @@ class Chain:
             ]
             for selector in selectors:
                 try:
-                    return self.page.wait_for_selector(selector, state="visible", timeout=timeout // len(selectors))
+                    return self.page.wait_for_selector(
+                        selector, state="visible", timeout=timeout // len(selectors)
+                    )
                 except:  # noqa: E722
                     continue
             return None
@@ -246,7 +247,9 @@ class Chain:
             ]
             for selector in selectors:
                 try:
-                    return self.page.wait_for_selector(selector, state="visible", timeout=timeout // len(selectors))
+                    return self.page.wait_for_selector(
+                        selector, state="visible", timeout=timeout // len(selectors)
+                    )
                 except:  # noqa: E722
                     continue
             return None
@@ -257,6 +260,7 @@ class Chain:
     def _find_by_regex(self, pattern: str, timeout: int = 10000):
         """正则匹配"""
         import re
+
         try:
             elements = self.page.query_selector_all(
                 'div[class*="group"], div[class*="item"], div[class*="option"]'

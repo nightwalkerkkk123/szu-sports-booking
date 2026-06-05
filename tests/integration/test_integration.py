@@ -1,4 +1,5 @@
 """Integration tests for booking system - Module interactions."""
+
 from datetime import datetime
 
 
@@ -14,11 +15,7 @@ class TestConfigAndAccountIntegration:
         manager = AccountManager()
 
         # Add account with config defaults
-        account = manager.add_account(
-            username="test_user",
-            password="test_pass",
-            priority=1
-        )
+        account = manager.add_account(username="test_user", password="test_pass", priority=1)
 
         assert manager.get_account_by_username("test_user") is not None
         assert account.username == "test_user"
@@ -114,7 +111,7 @@ class TestDatabaseAndAccountIntegration:
             status="success",
             error_code=None,
             duration_ms=1500,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert record.account == "user1"
@@ -140,7 +137,7 @@ class TestDatabaseAndAccountIntegration:
                 status="success" if i % 2 == 0 else "failed",
                 error_code=None,
                 duration_ms=1000,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
             db.insert_record(record)
 
@@ -158,19 +155,23 @@ class TestCLIAndConfigIntegration:
         from booking.cli import validate_config
 
         config_path = tmp_path / "config.yaml"
-        config_path.write_text("""
+        config_path.write_text(
+            """
 booking:
   venue_url: "https://ehall.szu.edu.cn/test"
   default_campus: "丽湖校区"
   default_sport: "羽毛球"
   default_date_index: 1
   default_time_slot: "20:00-21:00"
-""", encoding="utf-8")
+""",
+            encoding="utf-8",
+        )
         runner = CliRunner()
         result = runner.invoke(validate_config, ["--config", str(config_path)])
         assert result.exit_code == 0
         assert "丽湖校区" in result.output
         assert "羽毛球" in result.output
+
 
 class TestObservabilityIntegration:
     """Test observability components work together."""

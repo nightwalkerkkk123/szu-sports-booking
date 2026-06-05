@@ -1,4 +1,5 @@
 """Extract cookies from browser context."""
+
 import logging
 
 logger = logging.getLogger("booking.api")

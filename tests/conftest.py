@@ -1,4 +1,5 @@
 """Pytest configuration and shared fixtures."""
+
 import sys
 from pathlib import Path
 
@@ -18,7 +19,8 @@ def temp_dir(tmp_path):
 def sample_config_yaml(temp_dir):
     """Sample config.yaml content."""
     config_path = temp_dir / "config.yaml"
-    config_path.write_text("""
+    config_path.write_text(
+        """
 booking:
   venue_url: "https://test.example.com"
   default_campus: "粤海校区"
@@ -35,7 +37,9 @@ logging:
   dir: "logs"
   rotation: "daily"
   retention_days: 7
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     return str(config_path)
 
 

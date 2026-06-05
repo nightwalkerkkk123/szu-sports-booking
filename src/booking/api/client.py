@@ -15,6 +15,7 @@ Example:
     result = api.book(venue_wid="xxx", date="2026-05-25", time_slot="12:00-13:00",
                      username="2023150090", name="王子豪", ...)
 """
+
 import logging
 import random
 import time
@@ -127,21 +128,26 @@ class ApiClient:
         try:
             if method.upper() == "POST":
                 response = self._session_obj.post(
-                    url, data=data, headers=headers,
-                    proxy=self._proxy, timeout=self._timeout,
+                    url,
+                    data=data,
+                    headers=headers,
+                    proxy=self._proxy,
+                    timeout=self._timeout,
                 )
             else:
                 response = self._session_obj.get(
-                    url, params=data, headers=headers,
-                    proxy=self._proxy, timeout=self._timeout,
+                    url,
+                    params=data,
+                    headers=headers,
+                    proxy=self._proxy,
+                    timeout=self._timeout,
                 )
 
             if response.status_code == 401 or response.status_code == 403:
                 raise AuthenticationError("认证失败，请重新登录")
 
             if response.status_code == 404:
-                raise ApiError(code="NOT_FOUND", message="接口不存在",
-                             status_code=404)
+                raise ApiError(code="NOT_FOUND", message="接口不存在", status_code=404)
 
             response.raise_for_status()
             return response.json()
@@ -202,7 +208,9 @@ class ApiClient:
             "XMDM": sport_code,
         }
 
-        logger.info(f"获取时间段: campus={campus}, date={date}, sport={sport_code}, type={booking_type}")
+        logger.info(
+            f"获取时间段: campus={campus}, date={date}, sport={sport_code}, type={booking_type}"
+        )
 
         self._random_delay(0.2, 0.6)
 
@@ -248,8 +256,10 @@ class ApiClient:
             "XQDM": str(campus),
         }
 
-        logger.info(f"获取场地: campus={campus}, date={date}, sport={sport_code}, "
-                   f"time={start_time}-{end_time}")
+        logger.info(
+            f"获取场地: campus={campus}, date={date}, sport={sport_code}, "
+            f"time={start_time}-{end_time}"
+        )
 
         self._random_delay(0.3, 0.8)
 
@@ -306,8 +316,9 @@ class ApiClient:
             "PC_OR_PHONE": "pc",
         }
 
-        logger.info(f"提交预约: venue_wid={venue_wid}, date={date}, "
-                   f"time={time_slot}, user={username}")
+        logger.info(
+            f"提交预约: venue_wid={venue_wid}, date={date}, time={time_slot}, user={username}"
+        )
 
         # 预约前模拟人类停顿
         self._random_delay(1.0, 2.5)
@@ -352,8 +363,7 @@ class ApiClient:
 
         try:
             self._request("POST", "/modules/myBooking.do", data={"*json": "1"})
-            self._request("POST", "/modules/myBooking/myBookingInfo.do",
-                         data={"*searchMeta": "1"})
+            self._request("POST", "/modules/myBooking/myBookingInfo.do", data={"*searchMeta": "1"})
 
             result = self._request("POST", "/modules/myBooking.do", data={"*json": "1"})
             result = self._request(

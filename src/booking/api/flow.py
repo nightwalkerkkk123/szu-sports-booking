@@ -20,6 +20,7 @@ Example:
         time_slot="19:00-20:00",
     )
 """
+
 import logging
 from pathlib import Path
 
@@ -338,8 +339,7 @@ class ApiBookingFlow:
         venue = available_venues[0]
 
         logger.info(
-            f"Booking: venue={venue.name}, date={date}, "
-            f"time={time_slot}, user={self._username}"
+            f"Booking: venue={venue.name}, date={date}, time={time_slot}, user={self._username}"
         )
 
         result = self._api_client.book(
@@ -386,6 +386,7 @@ class ApiBookingFlow:
             True 如果在预约记录中找到了对应条目
         """
         import time as _time
+
         _time.sleep(1)  # 等待服务器处理
 
         try:
@@ -393,10 +394,10 @@ class ApiBookingFlow:
             sport_code = self.SPORT_CODES.get(sport, sport)
             # 匹配日期+项目+时间
             for r in records:
-                if (date in r.time_slot
-                    and r.sport_code == sport_code
-                    and r.is_active):
-                    logger.info(f"预约验证通过: {r.sport_name} {r.time_slot} 状态={r.status_display}")
+                if date in r.time_slot and r.sport_code == sport_code and r.is_active:
+                    logger.info(
+                        f"预约验证通过: {r.sport_name} {r.time_slot} 状态={r.status_display}"
+                    )
                     return True
             logger.warning("预约验证未找到匹配记录")
             return False

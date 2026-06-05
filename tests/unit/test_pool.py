@@ -37,11 +37,7 @@ class TestBookingPool:
     def test_add_account_with_config(self):
         """add_account_with_config 带独立配置"""
         pool = BookingPool()
-        pool.add_account_with_config(
-            "2023150090",
-            "password123",
-            config={"campus": "丽湖校区"}
-        )
+        pool.add_account_with_config("2023150090", "password123", config={"campus": "丽湖校区"})
         acc = pool.accounts[0]
         assert acc.metadata.get("config", {}).get("campus") == "丽湖校区"
 
@@ -139,11 +135,7 @@ class TestBookingResult:
 
     def test_result_str(self):
         """字符串表示"""
-        result = BookingResult(
-            username="2023150090",
-            status="success",
-            message="预约成功"
-        )
+        result = BookingResult(username="2023150090", status="success", message="预约成功")
         assert "2023150090" in str(result)
         assert "success" in str(result)
 
@@ -230,16 +222,16 @@ class TestBookingPoolMergedConfig:
         """Bug: _execute_account 不读账号独立配置。
         修复后，账号 default_sport 覆盖全局 default_sport。"""
         pool = BookingPool()
-        pool.update_config(
-            campus="粤海校区", sport="网球", time_slot="19:00-20:00"
-        )
+        pool.update_config(campus="粤海校区", sport="网球", time_slot="19:00-20:00")
         account = Account(
             username="test",
             password="pass",
-            metadata={"config": {
-                "default_sport": "羽毛球",
-                "default_campus": "丽湖校区",
-            }}
+            metadata={
+                "config": {
+                    "default_sport": "羽毛球",
+                    "default_campus": "丽湖校区",
+                }
+            },
         )
         cfg = pool._get_merged_config(account)
         assert cfg["sport"] == "羽毛球"

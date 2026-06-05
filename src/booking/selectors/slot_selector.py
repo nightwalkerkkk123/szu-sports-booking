@@ -8,6 +8,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 class SlotUnavailableError(Exception):
     """Raised when trying to select an unavailable slot."""
+
     pass
 
 
@@ -42,7 +43,7 @@ class FlexibleSlotSelector:
         """
         try:
             # 方法1：检查 div.element 的颜色样式（优先）
-            text_el = container.query_selector('div.element')
+            text_el = container.query_selector("div.element")
             if text_el:
                 style = text_el.get_attribute("style") or ""
                 if "rgb(134, 144, 156)" in style:
@@ -72,7 +73,7 @@ class FlexibleSlotSelector:
         regex: str = None,
         value: str = None,
         container_selector: str = None,
-        check_availability: bool = True
+        check_availability: bool = True,
     ) -> bool:
         """
         选择时间段
@@ -113,9 +114,7 @@ class FlexibleSlotSelector:
         if matched:
             # 检查可用性
             if check_availability and not matched.get("available", True):
-                raise SlotUnavailableError(
-                    f"选项不可用: {matched['text']} (已满员或已过期)"
-                )
+                raise SlotUnavailableError(f"选项不可用: {matched['text']} (已满员或已过期)")
 
             print(f"正在选择时间段: {matched['text']}")
             matched["element"].click()
@@ -136,7 +135,9 @@ class FlexibleSlotSelector:
             return True
         return False
 
-    def get_all(self, container_selector: str = None, check_availability: bool = True) -> list[dict]:
+    def get_all(
+        self, container_selector: str = None, check_availability: bool = True
+    ) -> list[dict]:
         """
         获取所有可用时间段
 
@@ -186,12 +187,9 @@ class FlexibleSlotSelector:
                     if check_availability:
                         available = self._is_available(container)
 
-                    options.append({
-                        "text": text,
-                        "value": value,
-                        "element": container,
-                        "available": available
-                    })
+                    options.append(
+                        {"text": text, "value": value, "element": container, "available": available}
+                    )
                 except Exception:
                     continue
 
@@ -208,7 +206,7 @@ class FlexibleSlotSelector:
         index: int = None,
         contains: str = None,
         regex: str = None,
-        value: str = None
+        value: str = None,
     ) -> dict | None:
         """找到匹配的时间段选项"""
         import re
@@ -230,7 +228,9 @@ class FlexibleSlotSelector:
         # 正则匹配
         if regex is not None:
             for opt in options:
-                if re.search(regex, opt["text"]) or (opt["value"] and re.search(regex, opt["value"])):
+                if re.search(regex, opt["text"]) or (
+                    opt["value"] and re.search(regex, opt["value"])
+                ):
                     return opt
             return None
 
@@ -319,6 +319,7 @@ class TimeSlotMatcher:
     def extract_time(text: str) -> tuple:
         """提取时间段的开始和结束时间"""
         import re
+
         match = re.search(r"(\d{1,2}:\d{2})", text)
         if match:
             return match.group(1)

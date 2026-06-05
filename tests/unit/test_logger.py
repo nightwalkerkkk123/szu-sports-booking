@@ -1,4 +1,5 @@
 """Tests for booking.observability.logger module - Structured logging."""
+
 from unittest.mock import patch
 
 
@@ -28,7 +29,7 @@ class TestStructuredLogging:
         from booking.observability.logger import Logger
 
         logger = Logger("test")
-        with patch.object(logger, '_log') as mock_log:
+        with patch.object(logger, "_log") as mock_log:
             logger.info("test message")
             mock_log.assert_called_once()
 
@@ -37,7 +38,7 @@ class TestStructuredLogging:
         from booking.observability.logger import Logger
 
         logger = Logger("test")
-        with patch.object(logger, '_log') as mock_log:
+        with patch.object(logger, "_log") as mock_log:
             logger.error("error occurred", trace_id="abc-123")
             call_args = mock_log.call_args
             assert "abc-123" in str(call_args)

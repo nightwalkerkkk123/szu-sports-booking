@@ -1,4 +1,5 @@
 """Tests for RunManager."""
+
 import json
 from pathlib import Path
 
@@ -84,8 +85,7 @@ class TestRunManager:
 
         rm.log_step("初始化浏览器", "success", duration_ms=100)
         rm.log_step("登录", "success", duration_ms=500)
-        rm.log_step("选择校区", "failed", duration_ms=50, error="未找到元素",
-                     campus="丽湖校区")
+        rm.log_step("选择校区", "failed", duration_ms=50, error="未找到元素", campus="丽湖校区")
 
         steps_file = Path(rm.current_run.run_dir) / "steps.json"
         assert steps_file.exists()
@@ -229,10 +229,7 @@ class TestRunRecord:
 
     def test_run_record_defaults(self):
         """RunRecord 默认值"""
-        record = RunRecord(
-            trace_id="test", run_dir="/tmp/test",
-            start_time="2026-01-01T00:00:00"
-        )
+        record = RunRecord(trace_id="test", run_dir="/tmp/test", start_time="2026-01-01T00:00:00")
         assert record.trace_id == "test"
         assert record.status == "running"
         assert record.campus == ""

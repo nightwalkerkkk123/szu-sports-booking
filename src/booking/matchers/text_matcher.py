@@ -30,4 +30,5 @@ class TextMatcher:
 
 class ExactMatcher(TextMatcher):
     """精确匹配的别名，与TextMatcher等价"""
+
     pass

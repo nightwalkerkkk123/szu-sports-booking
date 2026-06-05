@@ -1,10 +1,12 @@
 """CLI entry point for booking system."""
+
 import subprocess
 import sys
 from pathlib import Path
 
 import click
 
+from booking.cli_output import paint, print_header, print_task
 from booking.config import Config
 
 
@@ -18,8 +20,15 @@ def cli():
 @click.option("--config", "-c", default="configs/config.yaml", help="配置文件路径")
 @click.option("--account", "-a", help="指定账号")
 @click.option("--dry-run", is_flag=True, help="干跑模式")
-@click.option("--all", "run_all_flag", is_flag=True, help="执行所有账号（并发），默认是成功一个就停")
-def run(config, account, dry_run, run_all_flag):
+@click.option(
+    "--all", "run_all_flag", is_flag=True, help="执行所有账号（并发），默认是成功一个就停"
+)
+@click.option(
+    "--plan/--no-plan",
+    default=True,
+    help="\u843d\u76d8 plan.md + critical_points.json\uff08\u9ed8\u8ba4\u5f00\u542f\uff09",
+)
+def run(config, account, dry_run, run_all_flag, plan):
     """运行预约任务
 
     默认行为：run_until_success — 串行尝试，一个成功就停。
@@ -43,6 +52,7 @@ def run(config, account, dry_run, run_all_flag):
 
     # 生成 trace_id 并创建预约池
     import uuid
+
     trace_id = str(uuid.uuid4())
     pool = BookingPool(dry_run=dry_run, trace_id=trace_id)
 
@@ -76,8 +86,11 @@ def run(config, account, dry_run, run_all_flag):
                 continue
             password = _get_password(username)
             per_config = {
-                k: v for k, v in acc_entry.items()
-                if k in ("default_campus", "default_sport", "default_time_slot", "default_date_index") and v
+                k: v
+                for k, v in acc_entry.items()
+                if k
+                in ("default_campus", "default_sport", "default_time_slot", "default_date_index")
+                and v
             }
             if per_config:
                 pool.add_account(username, password, config=per_config)
@@ -89,6 +102,7 @@ def run(config, account, dry_run, run_all_flag):
     else:
         # 回退：从环境变量读取
         import os
+
         accounts = os.environ.get("SZU_ACCOUNTS", "")
         if accounts:
             for acc in accounts.split(","):
@@ -109,24 +123,40 @@ def run(config, account, dry_run, run_all_flag):
     # 启动 RunManager（使用同一个 trace_id）
     run_manager = RunManager()
     run_record = run_manager.start_run(  # noqa: F841
-        campus=cfg.default_campus,
-        sport=cfg.default_sport,
-        dry_run=dry_run,
-        trace_id=trace_id
+        campus=cfg.default_campus, sport=cfg.default_sport, dry_run=dry_run, trace_id=trace_id
     )
     click.echo(f"Trace ID: {trace_id}")
+
+    # 落盘 plan.md + critical_points.json（Webwright 风格工作区契约）。
+    # 计划本身在此处生成，校验留给 booking verify-plan 子命令或其它
+    # 后续步骤，避免改动 BookingPool 业务逻辑。
+    if plan:
+        from booking.observability.plan import default_booking_plan
+
+        plan_obj = default_booking_plan(
+            campus=cfg.default_campus,
+            sport=cfg.default_sport,
+            time_slot=cfg.default_time_slot,
+            date_index=cfg.default_date_index,
+        )
+        md_path, _json_path = run_manager.save_plan(plan_obj)
+        if md_path:
+            click.echo(paint(f"[OK] Plan: {plan_obj.total} critical points -> {md_path}", "ok"))
 
     # 执行预约
     try:
         if run_all_flag:
-            click.echo(f"\n开始并发执行 {len(pool.accounts)} 个账号...")
+            print_header("开始并发执行 {len(pool.accounts)} 个账号")
             run_manager.log(f"并发执行 {len(pool.accounts)} 个账号", level="INFO")
             results = pool.run_all(concurrent=True)
             success_count = sum(1 for r in results if r.status == "success")
-            for r in results:
-                run_manager.log(r.message, level=r.status.upper(),
-                                username=r.username, time_slot=r.time_slot)
-            click.echo(f"\n执行完成: {success_count}/{len(results)} 成功")
+            for i, r in enumerate(results, start=1):
+                level = "ok" if r.status == "success" else "error"
+                print_task(i, f"{r.username}: {r.message}", level=level)
+                run_manager.log(
+                    r.message, level=r.status.upper(), username=r.username, time_slot=r.time_slot
+                )
+            print_header("执行完成: {success_count}/{len(results)} 成功")
             run_manager.end_run(success=success_count > 0)
         else:
             click.echo("\n开始执行预约（成功一个即停）...")
@@ -179,7 +209,7 @@ def test_login(username, password, headless):
         client.wait(2)
 
         # 检查是否登录成功（通过 URL 或页面元素判断）
-        current_url = client.page.url if hasattr(client, 'page') and client.page else ""
+        current_url = client.page.url if hasattr(client, "page") and client.page else ""
 
         # 登录成功后会跳转到预约页面
         if "sportVenue" in current_url or "lwSzuCgyy" in current_url:
@@ -187,7 +217,7 @@ def test_login(username, password, headless):
             result = True
         else:
             # 检查是否有错误提示
-            page_content = client.page.content() if hasattr(client, 'page') and client.page else ""
+            page_content = client.page.content() if hasattr(client, "page") and client.page else ""
             if "密码错误" in page_content or "password" in page_content.lower():
                 click.echo("[X] 登录失败: 密码错误")
             elif "不存在" in page_content or "not exist" in page_content.lower():
@@ -226,7 +256,7 @@ def smoke():
     """运行冒烟测试"""
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/smoke", "-v"],
-        cwd=Path(__file__).parent.parent.parent
+        cwd=Path(__file__).parent.parent.parent,
     )
     raise SystemExit(result.returncode)
 
@@ -303,7 +333,9 @@ def runs(limit):
         campus = r.get("campus", "") or "-"
         sport = r.get("sport", "") or "-"
         time_str = r["start_time"][:19].replace("T", " ")
-        click.echo(f"{r['trace_id'][:8]:<12} {status_icon}{r['status']:<8} {campus:<8} {sport:<6} {time_str}")
+        click.echo(
+            f"{r['trace_id'][:8]:<12} {status_icon}{r['status']:<8} {campus:<8} {sport:<6} {time_str}"
+        )
 
 
 @cli.command()
@@ -390,7 +422,9 @@ def api(username, password, sport, date, time_slot, campus, name, dry_run, proxy
             try:
                 venues = flow.get_venues(date=date, time_slot=time_slot, sport=sport, campus=campus)
                 available_venues = [v for v in venues if v.is_available]
-                click.echo(f"\n场地 ({time_slot}): {len(venues)} 个, 可预约: {len(available_venues)} 个")
+                click.echo(
+                    f"\n场地 ({time_slot}): {len(venues)} 个, 可预约: {len(available_venues)} 个"
+                )
                 for v in venues:
                     mark = "✓" if v.is_available else "✗"
                     click.echo(f"  {mark} {v.name} ({v.venue_area_name}) - {v.text}")

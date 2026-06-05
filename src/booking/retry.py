@@ -1,4 +1,5 @@
 """Retry policy and strategies for booking system."""
+
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -7,7 +8,7 @@ from typing import TypeVar
 
 from booking.errors import ERROR_MAP, ErrorCode
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class RetryStrategy(Enum):
@@ -60,7 +61,7 @@ class RetryPolicy:
         if self.strategy == RetryStrategy.LINEAR_BACKOFF:
             return self.base_delay * attempt
         elif self.strategy == RetryStrategy.EXPONENTIAL_BACKOFF:
-            return min(self.base_delay * (2 ** attempt), self.max_delay)
+            return min(self.base_delay * (2**attempt), self.max_delay)
         else:  # IMMEDIATE
             return 0
 
@@ -74,11 +75,7 @@ class BookingError(RuntimeError):
         super().__init__(self.message)
 
 
-def retry_with_policy(
-    func: Callable[[], T],
-    policy: RetryPolicy,
-    error_code: ErrorCode
-) -> T:
+def retry_with_policy(func: Callable[[], T], policy: RetryPolicy, error_code: ErrorCode) -> T:
     """
     Execute a function with retry policy.
 

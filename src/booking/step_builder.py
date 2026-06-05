@@ -1,6 +1,7 @@
 """
 步骤构建器 - 支持重试和错误处理的流程执行
 """
+
 from collections.abc import Callable
 
 from playwright.sync_api import Page
@@ -31,22 +32,19 @@ class StepBuilder:
         参数:
             description: 步骤描述，用于日志输出
         """
-        self.steps.append({
-            "description": description,
-            "retries": 3,
-            "delay": 0,
-            "action": None,
-            "on_error": None,
-        })
+        self.steps.append(
+            {
+                "description": description,
+                "retries": 3,
+                "delay": 0,
+                "action": None,
+                "on_error": None,
+            }
+        )
         return self
 
     def click(
-        self,
-        target: str = None,
-        *,
-        index: int = None,
-        contains: str = None,
-        timeout: int = 10000
+        self, target: str = None, *, index: int = None, contains: str = None, timeout: int = 10000
     ) -> "StepBuilder":
         """
         点击目标
@@ -57,12 +55,10 @@ class StepBuilder:
             contains: 包含文本匹配
             timeout: 超时时间(ms)
         """
-        self.steps[-1]["action"] = ("click", {
-            "target": target,
-            "index": index,
-            "contains": contains,
-            "timeout": timeout
-        })
+        self.steps[-1]["action"] = (
+            "click",
+            {"target": target, "index": index, "contains": contains, "timeout": timeout},
+        )
         return self
 
     def click_first(self) -> "StepBuilder":
@@ -114,7 +110,7 @@ class StepBuilder:
             retries = step.get("retries", 1)
             delay = step.get("delay", 0)
 
-            print(f"[步骤 {i+1}/{len(self.steps)}] {desc}")
+            print(f"[步骤 {i + 1}/{len(self.steps)}] {desc}")
 
             success = False
             last_error = None
@@ -134,7 +130,7 @@ class StepBuilder:
                             target=action_data.get("target"),
                             index=action_data.get("index"),
                             contains=action_data.get("contains"),
-                            timeout=action_data.get("timeout", 10000)
+                            timeout=action_data.get("timeout", 10000),
                         )
                         success = True
 
@@ -144,13 +140,13 @@ class StepBuilder:
 
                     elif action_type == "wait":
                         import time
+
                         time.sleep(action_data)
                         success = True
 
                     elif action_type == "wait_for":
                         self.chain.wait_for(
-                            action_data["selector"],
-                            action_data.get("timeout", 10000)
+                            action_data["selector"], action_data.get("timeout", 10000)
                         )
                         success = True
 
@@ -170,6 +166,7 @@ class StepBuilder:
 
             if delay > 0:
                 import time
+
                 time.sleep(delay)
 
         print("\n" + "=" * 50)

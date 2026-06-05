@@ -1,4 +1,5 @@
 """Tests for booking.database module - Local data storage."""
+
 import sqlite3
 from datetime import datetime
 
@@ -57,7 +58,7 @@ class TestBookingRecord:
             status="success",
             error_code=None,
             duration_ms=1500,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert record.trace_id == "trace-123"
@@ -86,7 +87,7 @@ class TestInsertRecord:
             status="success",
             error_code=None,
             duration_ms=2000,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         db.insert_record(record)
@@ -120,7 +121,7 @@ class TestGetRecordsByAccount:
                 status="success" if i % 2 == 0 else "failed",
                 error_code=None,
                 duration_ms=1000,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
             db.insert_record(record)
 
@@ -161,12 +162,12 @@ class TestGetSuccessRate:
                 status=status,
                 error_code=None,
                 duration_ms=1000,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
             db.insert_record(record)
 
         rate = db.get_success_rate()
-        assert rate == pytest.approx(2/3)
+        assert rate == pytest.approx(2 / 3)
 
 
 class TestGetRecentRecords:
@@ -191,7 +192,7 @@ class TestGetRecentRecords:
                 status="success",
                 error_code=None,
                 duration_ms=1000,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
             db.insert_record(record)
 

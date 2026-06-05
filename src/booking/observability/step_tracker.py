@@ -1,4 +1,5 @@
 """Step tracking for booking execution."""
+
 import json
 import time
 from dataclasses import dataclass, field

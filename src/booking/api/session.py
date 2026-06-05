@@ -1,4 +1,5 @@
 """Session manager for cookie and authentication state."""
+
 from dataclasses import dataclass, field
 
 
@@ -10,11 +11,13 @@ class SessionManager:
     cookies: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
 
-    _required_cookies: list[str] = field(default_factory=lambda: [
-        "MOD_AUTH_CAS",
-        "_WEU",
-        "EMAP_LANG",
-    ])
+    _required_cookies: list[str] = field(
+        default_factory=lambda: [
+            "MOD_AUTH_CAS",
+            "_WEU",
+            "EMAP_LANG",
+        ]
+    )
 
     def __post_init__(self):
         self._init_headers()
@@ -62,6 +65,7 @@ class SessionManager:
             if hasattr(browser_context, "cookies"):
                 # It's a Playwright context
                 import asyncio
+
                 asyncio.get_event_loop().run_until_complete(
                     self._extract_cookies_async(browser_context)
                 )

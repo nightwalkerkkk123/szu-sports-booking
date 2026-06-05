@@ -2,6 +2,7 @@
 
 Run:  pytest tests/unit/test_rate_limiter.py -v
 """
+
 from __future__ import annotations
 
 import sys

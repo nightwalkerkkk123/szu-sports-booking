@@ -1,6 +1,7 @@
 """
 灵活场地选择器 - 支持多级选择（场馆类型 -> 具体场地）
 """
+
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
@@ -28,12 +29,7 @@ class FlexibleVenueSelector:
         self.container_selector = container_selector or self.DEFAULT_CONTAINER_SELECTOR
 
     def select(
-        self,
-        venue_name: str = None,
-        *,
-        index: int = None,
-        contains: str = None,
-        regex: str = None
+        self, venue_name: str = None, *, index: int = None, contains: str = None, regex: str = None
     ) -> bool:
         """
         选择场地
@@ -93,7 +89,7 @@ class FlexibleVenueSelector:
                 "div[class*='venue']",
                 "div[class*='court']",
                 "div[class*='field']",
-                "div.item:has(input[type='radio'])"
+                "div.item:has(input[type='radio'])",
             ]
 
             containers = []
@@ -118,11 +114,7 @@ class FlexibleVenueSelector:
                     radio = container.query_selector('input[type="radio"]')
                     value = radio.get_attribute("value") if radio else None
 
-                    venues.append({
-                        "text": text,
-                        "value": value,
-                        "element": container
-                    })
+                    venues.append({"text": text, "value": value, "element": container})
                 except Exception:
                     continue
 
@@ -138,7 +130,7 @@ class FlexibleVenueSelector:
         venue_name: str = None,
         index: int = None,
         contains: str = None,
-        regex: str = None
+        regex: str = None,
     ) -> dict | None:
         """找到匹配的场地"""
         import re

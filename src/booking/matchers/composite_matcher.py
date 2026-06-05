@@ -1,4 +1,5 @@
 """Composite matcher for combining multiple matchers."""
+
 from collections.abc import Callable
 
 from booking.matchers.contains_matcher import ContainsMatcher, PrefixMatcher
@@ -111,14 +112,14 @@ class AnyOfMatcher:
 
 class AllOfMatcher:
     """
-   全部匹配器 - 所有条件都匹配才返回True
+    全部匹配器 - 所有条件都匹配才返回True
 
-    示例:
-        matcher = AllOfMatcher([
-            ContainsMatcher(),
-            PrefixMatcher(),
-        ])
-        matcher.match("粤海校区", "粤")  # True
+     示例:
+         matcher = AllOfMatcher([
+             ContainsMatcher(),
+             PrefixMatcher(),
+         ])
+         matcher.match("粤海校区", "粤")  # True
     """
 
     def __init__(self, matchers: list[Callable] | None = None):
@@ -156,10 +157,12 @@ def create_flexible_matcher() -> CompositeMatcher:
 
     优先级：精确匹配 > 前缀匹配 > 包含匹配
     """
-    return CompositeMatcher() \
-        .add(TextMatcher(), weight=1.0) \
-        .add(PrefixMatcher(), weight=0.9) \
+    return (
+        CompositeMatcher()
+        .add(TextMatcher(), weight=1.0)
+        .add(PrefixMatcher(), weight=0.9)
         .add(ContainsMatcher(), weight=0.8)
+    )
 
 
 def create_time_slot_matcher() -> TimeSlotMatcher:
@@ -172,7 +175,9 @@ def create_campus_matcher() -> AnyOfMatcher:
     创建校区匹配器
     支持：精确匹配、包含匹配（匹配"粤海"即匹配"粤海校区"）
     """
-    return AnyOfMatcher([
-        TextMatcher(),
-        ContainsMatcher(),
-    ])
+    return AnyOfMatcher(
+        [
+            TextMatcher(),
+            ContainsMatcher(),
+        ]
+    )

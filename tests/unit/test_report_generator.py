@@ -1,4 +1,5 @@
 """Tests for ReportGenerator."""
+
 from pathlib import Path
 
 import pytest
@@ -17,8 +18,7 @@ class TestReportGenerator:
         rm.log("程序启动", level="INFO", campus="粤海校区")
         rm.log_step("初始化浏览器", "success", duration_ms=100)
         rm.log_step("用户登录", "success", duration_ms=500)
-        rm.log_step("选择校区", "failed", duration_ms=0, error="未找到元素",
-                     campus="丽湖校区")
+        rm.log_step("选择校区", "failed", duration_ms=0, error="未找到元素", campus="丽湖校区")
         rm.end_run(success=False, error_message="选择校区失败")
 
         html_path = generate_html_report("test-report", rm)

@@ -33,10 +33,7 @@ class TestRetryPolicy:
         from booking.retry import RetryPolicy, RetryStrategy
 
         policy = RetryPolicy(
-            max_attempts=5,
-            base_delay=2.0,
-            max_delay=60.0,
-            strategy=RetryStrategy.LINEAR_BACKOFF
+            max_attempts=5, base_delay=2.0, max_delay=60.0, strategy=RetryStrategy.LINEAR_BACKOFF
         )
         assert policy.max_attempts == 5
         assert policy.base_delay == 2.0
@@ -109,10 +106,7 @@ class TestGetDelay:
         """LINEAR_BACKOFF strategy returns base_delay * attempt."""
         from booking.retry import RetryPolicy, RetryStrategy
 
-        policy = RetryPolicy(
-            strategy=RetryStrategy.LINEAR_BACKOFF,
-            base_delay=2.0
-        )
+        policy = RetryPolicy(strategy=RetryStrategy.LINEAR_BACKOFF, base_delay=2.0)
 
         assert policy.get_delay(attempt=0) == 0
         assert policy.get_delay(attempt=1) == 2.0
@@ -123,9 +117,7 @@ class TestGetDelay:
         from booking.retry import RetryPolicy, RetryStrategy
 
         policy = RetryPolicy(
-            strategy=RetryStrategy.EXPONENTIAL_BACKOFF,
-            base_delay=1.0,
-            max_delay=30.0
+            strategy=RetryStrategy.EXPONENTIAL_BACKOFF, base_delay=1.0, max_delay=30.0
         )
 
         # attempt=0: 1.0 * 2^0 = 1.0
