@@ -25,7 +25,7 @@ format:
 	ruff format src/ tests/
 
 test:
-	PYTHONPATH=src pytest tests/ -m "not real_env"
+	PYTHONPATH=src pytest tests/ -m "not real_env and not network"
 
 test-unit:
 	PYTHONPATH=src pytest tests/unit/ -v

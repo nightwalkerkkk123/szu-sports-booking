@@ -55,7 +55,7 @@ jobs:
       - name: Run tests
         run: |
           PYTHONPATH=/Users/wangzihao/Desktop/登录体育馆_cloak/src \
-          pytest tests/ -m "not real_env" --cov=src --cov-report=xml -v
+          pytest tests/ -m "not real_env and not network" --cov=src --cov-report=xml -v
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
