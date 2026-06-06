@@ -14,6 +14,7 @@ help:
 	@echo "  make ci            - Run lint + test (CI pipeline)"
 	@echo "  make check-repo    - Run repository self-check"
 	@echo "  make clean         - Remove cache files"
+	@echo "  make tmp-clean     - Empty tmp/ scratch directory"
 
 install:
 	uv sync --dev
@@ -50,9 +51,9 @@ check-repo:
 	PYTHONPATH=src python3 scripts/check_repo.py
 
 doctor:
-	@echo "检查环境..."
+	@echo "检查环�?.."
 	@python3 --version
-	@echo "检查依赖..."
+	@echo "检查依�?.."
 	@python3 -c "import click; import pytest; import yaml; print('核心依赖: OK')"
 
 clean:
@@ -62,3 +63,9 @@ clean:
 	rm -rf __pycache__/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
+
+tmp-clean:
+	@echo "Cleaning tmp/ scratch directory..."
+	@if exist tmp (rmdir /S /Q tmp 2>nul & mkdir tmp >nul) else (mkdir tmp >nul)
+	@echo "tmp/ emptied."

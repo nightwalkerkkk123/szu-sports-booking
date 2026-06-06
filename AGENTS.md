@@ -147,3 +147,14 @@ pytest tests/ -m "not real_env"
 - [CONFIG.md](docs/CONFIG.md) - 配置说明
 - [ERRORS.md](docs/ERRORS.md) - 错误码说明
 - [DEVELOPMENT.md](docs/DEVELOPMENT.md) - 开发指南
+
+## 临时文件规范
+
+- 所有一次性脚本、调试脚本、迁移脚本、dump 文件必须放在 tmp/ 目录（仓库根的 tmp/ 已被 .gitignore 忽略，仅本地可见）。
+- 命名建议带用途前缀，例如 tmp/patch_<topic>.py、tmp/analyze_<topic>.py、tmp/dump_<date>.json，方便后续定位和清理。
+- 禁止在仓库根目录直接创建 patch_*.py / fix_*.py / analyze.py / dump.* 等一次性脚本（这类命名一旦被遗忘就会变成永久噪音）。
+- 周期性清理（保留 tmp/ 目录本身）：
+  - make tmp-clean — 清空 tmp/ 内容（推荐）
+  - git clean -fX tmp/ — 只清 git 标记为 ignored 的本地文件
+  - Get-ChildItem tmp -Recurse | Where-Object LastWriteTime -LT (Get-Date).AddDays(-7) | Remove-Item -Recurse -Force — PowerShell 下清理 7 天以上未访问的文件
+

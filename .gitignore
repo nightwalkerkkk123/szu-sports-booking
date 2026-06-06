@@ -48,3 +48,7 @@ build/
 # Go binaries
 surf-proxy/surf-proxy
 *.exe
+# Temporary scratch space (one-off patch scripts, debug helpers, dumps)
+# Keep local-only; clean periodically with make tmp-clean or git clean -fX tmp/.
+tmp/
+
