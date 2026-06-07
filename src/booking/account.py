@@ -1,5 +1,6 @@
 """Account management for booking system."""
 
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -39,6 +40,7 @@ class Account:
     last_used: datetime | None = None
     cooldown_until: datetime | None = None
     metadata: dict = field(default_factory=dict)
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
 
     def is_available(self) -> bool:
         """
@@ -47,18 +49,19 @@ class Account:
         Returns:
             True if account can be used for booking, False otherwise.
         """
-        # Check cooldown expiry first
-        if self.cooldown_until and datetime.now() < self.cooldown_until:
-            return False
+        with self._lock:
+            # Check cooldown expiry first
+            if self.cooldown_until and datetime.now() < self.cooldown_until:
+                return False
 
-        # Then check status
-        if self.status == AccountStatus.COOLDOWN:
-            # Cooldown expired, account is available
+            # Then check status
+            if self.status == AccountStatus.COOLDOWN:
+                # Cooldown expired, account is available
+                return True
+            elif self.status != AccountStatus.AVAILABLE:
+                return False
+
             return True
-        elif self.status != AccountStatus.AVAILABLE:
-            return False
-
-        return True
 
     def mark_failure(self) -> None:
         """
@@ -66,11 +69,12 @@ class Account:
 
         Increments consecutive_failures and triggers cooldown after 3 failures.
         """
-        self.consecutive_failures += 1
+        with self._lock:
+            self.consecutive_failures += 1
 
-        if self.consecutive_failures >= 3:
-            self.status = AccountStatus.COOLDOWN
-            self.cooldown_until = datetime.now() + timedelta(minutes=5)
+            if self.consecutive_failures >= 3:
+                self.status = AccountStatus.COOLDOWN
+                self.cooldown_until = datetime.now() + timedelta(minutes=5)
 
     def mark_success(self) -> None:
         """
@@ -78,10 +82,11 @@ class Account:
 
         Resets consecutive_failures and updates last_used timestamp.
         """
-        self.consecutive_failures = 0
-        self.last_used = datetime.now()
-        self.status = AccountStatus.AVAILABLE
-        self.cooldown_until = None
+        with self._lock:
+            self.consecutive_failures = 0
+            self.last_used = datetime.now()
+            self.status = AccountStatus.AVAILABLE
+            self.cooldown_until = None
 
     @property
     def credentials(self) -> tuple[str, str]:
@@ -113,19 +118,20 @@ class AccountManager:
         """Initialize empty AccountManager."""
         self._accounts: list[Account] = []
 
-    def add_account(self, username: str, password: str, **metadata) -> Account:
+    def add_account(self, username: str, password: str, priority: int = 1, **metadata) -> Account:
         """
         Add a new account to the manager.
 
         Args:
             username: Account username
             password: Account password
+            priority: Account priority (higher = used first)
             **metadata: Additional metadata to store with account
 
         Returns:
             The newly created Account.
         """
-        account = Account(username=username, password=password, metadata=metadata)
+        account = Account(username=username, password=password, priority=priority, metadata=metadata)
         self._accounts.append(account)
         return account
 

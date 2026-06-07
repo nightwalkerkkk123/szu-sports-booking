@@ -297,3 +297,84 @@ class TestBookingPoolCallbacks:
 
         assert len(calls) == 1
         assert calls[0] == ("test", "running")
+
+
+class TestAccountStateRegression:
+    """回归测试：BookingPool 接入状态机后，failure 状态正确累积 + cooldown 生效 + 并发安全。"""
+
+    def test_three_consecutive_failures_trigger_cooldown(self):
+        """连续 3 次 mark_failure 触发 COOLDOWN（验证状态机可被触发）
+
+        这是 plan 修的 bug 的最直接回归：原先 BookingPool 整条链路
+        不调 mark_failure，所以 cooldown 永远不生效。
+        """
+        from booking.account import AccountStatus
+
+        pool = BookingPool()
+        pool.add_account("user_a", "pass_a")
+        account = pool.accounts[0]
+
+        assert account.is_available()
+
+        account.mark_failure()
+        assert account.is_available()  # 1 次失败还不 cooldown
+        account.mark_failure()
+        assert account.is_available()  # 2 次失败还不 cooldown
+        account.mark_failure()
+        # 3 次失败后：进入 COOLDOWN
+        assert account.status == AccountStatus.COOLDOWN
+        assert not account.is_available()
+
+    def test_find_next_available_skips_cooldown_accounts(self):
+        """_find_next_available 跳过 cooldown 账号（验证 run_until_success 用的辅助函数）"""
+        pool = BookingPool()
+        pool.add_account("user_a", "pass_a")
+        pool.add_account("user_b", "pass_b")
+        pool.add_account("user_c", "pass_c")
+
+        # user_a 进 cooldown
+        pool.accounts[0].mark_failure()
+        pool.accounts[0].mark_failure()
+        pool.accounts[0].mark_failure()
+
+        # 从 index 0 找，应跳过 user_a 返回 user_b
+        result = pool._find_next_available(0)
+        assert result is pool.accounts[1]
+
+        # 从 index 2 找，user_c 仍可用
+        result = pool._find_next_available(2)
+        assert result is pool.accounts[2]
+
+        # 全部 cooldown 时返回 None
+        pool.accounts[1].mark_failure()
+        pool.accounts[1].mark_failure()
+        pool.accounts[1].mark_failure()
+        pool.accounts[2].mark_failure()
+        pool.accounts[2].mark_failure()
+        pool.accounts[2].mark_failure()
+        result = pool._find_next_available(0)
+        assert result is None
+
+    def test_concurrent_mark_failure_is_thread_safe(self):
+        """并发 mark_failure 不丢更新（per-Account 锁验证）
+
+        10 线程 × 10 次 = 100 次 mark_failure；如无锁，consecutive_failures 会
+        远小于 100（read-modify-write 竞态）。
+        """
+        from concurrent.futures import ThreadPoolExecutor
+
+        pool = BookingPool()
+        pool.add_account("user_a", "pass_a")
+        account = pool.accounts[0]
+
+        n_threads = 10
+        calls_per_thread = 10
+
+        with ThreadPoolExecutor(max_workers=n_threads) as ex:
+            futures = [
+                ex.submit(account.mark_failure) for _ in range(n_threads * calls_per_thread)
+            ]
+            for f in futures:
+                f.result()
+
+        assert account.consecutive_failures == n_threads * calls_per_thread

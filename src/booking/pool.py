@@ -9,6 +9,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from booking.account import Account, AccountManager
+
 logger = logging.getLogger("booking.pool")
 
 
@@ -27,20 +29,6 @@ class BookingResult:
         return f"[{self.username}] {self.status}: {self.message}"
 
 
-@dataclass
-class Account:
-    """账号"""
-
-    username: str
-    password: str
-    priority: int = 1
-    metadata: dict = field(default_factory=dict)
-
-    @property
-    def credentials(self) -> tuple:
-        return (self.username, self.password)
-
-
 class BookingPool:
     """
     多账号调度池
@@ -55,6 +43,7 @@ class BookingPool:
 
     def __init__(self, max_concurrent: int = 3, dry_run: bool = False, trace_id: str = None):
         self.accounts: list[Account] = []
+        self._manager = AccountManager()
         self.max_concurrent = max_concurrent
         self._dry_run = dry_run
         self._trace_id = trace_id
@@ -89,9 +78,10 @@ class BookingPool:
         priority = metadata.pop("priority", 1)
         if config:
             metadata["config"] = config
-        self.accounts.append(
-            Account(username=username, password=password, priority=priority, metadata=metadata)
+        account = self._manager.add_account(
+            username=username, password=password, priority=priority, **metadata
         )
+        self.accounts.append(account)
         return self
 
     def _get_merged_config(self, account: Account) -> dict:
@@ -121,11 +111,11 @@ class BookingPool:
         self, username: str, password: str, config: dict = None, **metadata
     ) -> "BookingPool":
         """添加账号（带独立配置）"""
-        account = Account(
+        account = self._manager.add_account(
             username=username,
             password=password,
             priority=metadata.pop("priority", 1),
-            metadata={**metadata, "config": config or {}},
+            **{**metadata, "config": config or {}},
         )
         self.accounts.append(account)
         return self
@@ -215,25 +205,32 @@ class BookingPool:
                 print("收到停止信号")
                 break
 
-            # 按顺序选择账号
-            account = self.accounts[current_index]
+            # 从 current_index 起找下一个可用账号（跳过 cooldown）
+            account = self._find_next_available(current_index)
+            if account is None:
+                print("所有账号都在 cooldown，等待 5 秒...")
+                time.sleep(5)
+                continue
+
             print(f"\n尝试账号: {account.username}")
 
             result = self._execute_account(account)
 
             if result.status == "success":
+                account.mark_success()
                 print(f"\n🎉 预约成功! 账号: {result.username}")
                 self._report_progress(account.username, "success", result)
                 if self._on_success:
                     self._on_success(result)
                 return result
 
+            account.mark_failure()
             self._report_progress(account.username, "failed", result)
             if self._on_failed:
                 self._on_failed(result)
 
-            # 切换到下一个账号
-            current_index = (current_index + 1) % len(self.accounts)
+            # 推进 current_index（绕过刚跑过的账号）
+            current_index = (self.accounts.index(account) + 1) % len(self.accounts)
 
             # 如果所有账号都尝试过了，等待一下再重试
             if current_index == 0:
@@ -267,7 +264,23 @@ class BookingPool:
     def _run_account(self, account: Account, results: list[BookingResult], task_index: int = 1):
         """运行单个账号"""
         result = self._execute_account(account, task_index=task_index)
+        if result.status == "success":
+            account.mark_success()
+        else:
+            account.mark_failure()
         results.append(result)
+
+    def _find_next_available(self, start_index: int) -> Account | None:
+        """从 start_index 起找下一个可用账号（跳过 cooldown）
+
+        返回第一个 is_available() 为 True 的账号；若所有账号都不可用则返回 None。
+        """
+        n = len(self.accounts)
+        for i in range(n):
+            candidate = self.accounts[(start_index + i) % n]
+            if candidate.is_available():
+                return candidate
+        return None
 
     def _execute_account(self, account: Account, task_index: int = 1) -> BookingResult:
         """执行单个账号的预约流程
