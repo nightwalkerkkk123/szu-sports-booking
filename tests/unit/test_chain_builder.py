@@ -200,3 +200,63 @@ class TestChainChaining:
         chain.click(index=0).wait(0.01).click_first().wait_for(".test")
 
         assert len(chain.history) >= 1
+
+
+class TestChainClickSelector:
+    """Tests for click(selector=...) —— 一致性修复（None 时 raise）。"""
+
+    def test_click_with_selector_raises_when_not_found(self):
+        """click(selector=...) 在 selector 不存在时 raise ClickError（与 target= 一致）"""
+        page = MagicMock()
+        page.wait_for_selector.return_value = None  # 模拟 selector 不存在
+
+        chain = Chain(page)
+        with pytest.raises(ClickError):
+            chain.click(selector=".missing")
+
+    def test_click_with_selector_succeeds_when_element_found(self):
+        """click(selector=...) 在 selector 命中时正常点击"""
+        page = MagicMock()
+        element = _make_element()
+        page.wait_for_selector.return_value = element
+
+        chain = Chain(page)
+        result = chain.click(selector="#login_submit")
+
+        assert result is chain
+        element.click.assert_called_once()
+
+    def test_click_with_selector_records_history(self):
+        """click(selector=...) 命中时 history 记 'click_selector'"""
+        page = MagicMock()
+        element = _make_element()
+        page.wait_for_selector.return_value = element
+
+        chain = Chain(page)
+        chain.click(selector="#login_submit")
+
+        assert ("click_selector", "#login_submit") in chain.history
+
+
+class TestChainClearCookies:
+    """Tests for clear_cookies() —— switch_account 用。"""
+
+    def test_clear_cookies_calls_page_context(self):
+        """clear_cookies() 调 self.page.context.clear_cookies()"""
+        page = MagicMock()
+
+        chain = Chain(page)
+        result = chain.clear_cookies()
+
+        page.context.clear_cookies.assert_called_once()
+        assert result is chain
+
+    def test_clear_cookies_silent_on_failure(self):
+        """clear_cookies() 在异常时静默返回 self（与原 switch_account 行为一致）"""
+        page = MagicMock()
+        page.context.clear_cookies.side_effect = Exception("boom")
+
+        chain = Chain(page)
+        result = chain.clear_cookies()
+
+        assert result is chain

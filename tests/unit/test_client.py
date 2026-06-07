@@ -121,3 +121,44 @@ class TestBookingClientRunSteps:
         client.set_browser(fake)
         result = client.run_steps([])
         assert result is True
+
+
+class TestBookingClientSwitchAccount:
+    """Tests for switch_account —— clear_cookies 走 Chain。"""
+
+    def test_switch_account_uses_chain_clear_cookies(self):
+        """switch_account 调 self.chain.clear_cookies() 而不是直接 page.context.clear_cookies()"""
+        from unittest.mock import MagicMock, patch
+
+        client = BookingClient()
+        fake = FakeBrowserLifecycle()
+        fake.launch()
+        client.set_browser(fake)
+
+        # 替换 client.chain.clear_cookies 为 spy，验证被调用
+        # 同时让 page.goto / login 失败 / 跳过，避免真起浏览器
+        client.chain.clear_cookies = MagicMock(return_value=client.chain)
+        client.login = MagicMock(return_value=client)
+
+        # patch page.goto / wait_for_load_state 让 switch_account 的导航不报错
+        with patch.object(client.page, "goto", return_value=None), \
+             patch.object(client.page, "wait_for_load_state", return_value=None):
+            client.switch_account("user_x", "pass_x")
+
+        client.chain.clear_cookies.assert_called_once()
+
+    def test_switch_account_with_no_password_returns_self_without_clearing(self):
+        """switch_account(password=None) 保留当前会话，不调 clear_cookies"""
+        from unittest.mock import MagicMock
+
+        client = BookingClient()
+        fake = FakeBrowserLifecycle()
+        fake.launch()
+        client.set_browser(fake)
+
+        client.chain.clear_cookies = MagicMock(return_value=client.chain)
+
+        result = client.switch_account("user_x", None)
+
+        assert result is client
+        client.chain.clear_cookies.assert_not_called()

@@ -46,6 +46,7 @@ class FakePage:
         """Initialize fake page."""
         self._url = ""
         self._content = {}
+        self._bodies: dict[str, str] = {}
         self.keyboard = FakeKeyboard()
 
     def goto(self, url: str) -> None:
@@ -79,6 +80,17 @@ class FakePage:
     def evaluate(self, script: str) -> None:
         """No-op for fake page."""
         pass
+
+    def inner_text(self, selector: str = "body") -> str:
+        """读 body 文本（FakeBrowser 必须支持，confirm 关键字匹配用）
+
+        测试用 set_body_text() 预设文本。
+        """
+        return self._bodies.get(selector, "")
+
+    def set_body_text(self, selector: str, text: str) -> None:
+        """测试用：预设 body 文本（confirm 测试中模拟成功/失败提示）"""
+        self._bodies[selector] = text
 
     def query_selector(self, selector: str):
         """Return None for fake page."""

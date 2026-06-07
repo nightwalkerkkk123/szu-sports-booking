@@ -6,8 +6,12 @@
 import logging
 from pathlib import Path
 
-from .chain_builder import Chain, ClickError
+from .chain_builder import Chain
+from .selectors.campus_page import CampusPage
+from .selectors.confirm_page import ConfirmPage
+from .selectors.login_page import LoginPage
 from .selectors.slot_selector import FlexibleSlotSelector, SlotUnavailableError
+from .selectors.sport_page import SportPage
 from .selectors.venue_selector import FlexibleVenueSelector
 from .step_builder import StepBuilder
 
@@ -55,6 +59,10 @@ class BookingClient:
         self.step_builder = None
         self.slot_selector = None
         self.venue_selector = None
+        self.login_page = None
+        self.confirm_page = None
+        self.campus_page = None
+        self.sport_page = None
 
         # 如果提供了 trace_id，初始化步骤追踪
         if trace_id:
@@ -104,6 +112,10 @@ class BookingClient:
         self.step_builder = StepBuilder(self.page)
         self.slot_selector = FlexibleSlotSelector(self.page)
         self.venue_selector = FlexibleVenueSelector(self.page)
+        self.login_page = LoginPage(self.page, chain=self.chain)
+        self.confirm_page = ConfirmPage(self.page, chain=self.chain)
+        self.campus_page = CampusPage(self.page, chain=self.chain)
+        self.sport_page = SportPage(self.page, chain=self.chain)
 
     def _ensure_page_loaded(self, url: str):
         """确保页面已加载"""
@@ -153,35 +165,7 @@ class BookingClient:
         if self._tracker:
             self._tracker.start_step("用户登录", details={"username": username})
 
-        # 输入用户名
-        self.page.fill("#username", username)
-        self.page.keyboard.press("Tab")
-
-        # 输入密码
-        self.page.wait_for_selector("#password", state="visible", timeout=20000)
-        self.page.evaluate("""
-            el = document.querySelector('#password');
-            if (el) {
-                el.removeAttribute('readonly');
-                el.classList.remove('no-auto-input');
-            }
-        """)
-        self.page.fill("#password", password)
-
-        # 点击登录
-        self.page.click("#login_submit")
-
-        # 等待登录完成，跳转到预约页面
-        try:
-            self.page.wait_for_load_state("domcontentloaded", timeout=30000)
-        except Exception:
-            pass  # 超时继续，可能已经跳转
-
-        # 等待校区选择按钮出现
-        try:
-            self.page.wait_for_selector(".bh-btn", state="visible", timeout=15000)
-        except Exception:
-            pass  # 超时继续
+        self.login_page.login(username, password)
 
         print("登录完成")
         logger.info("登录完成", extra={"username": username})
@@ -212,10 +196,7 @@ class BookingClient:
             pass  # 登出失败，继续尝试登录
 
         # 2. 清除 cookies
-        try:
-            self.page.context.clear_cookies()
-        except Exception:
-            pass
+        self.chain.clear_cookies()
 
         # 3. 导航回登录页
         try:
@@ -237,17 +218,8 @@ class BookingClient:
         if index is not None:
             self.chain.click(index=index)
         elif name:
-            # Use CSS selector directly - .bh-btn contains the text
-            try:
-                element = self.page.wait_for_selector(
-                    f'.bh-btn:has-text("{name}")', state="visible", timeout=10000
-                )
-                element.click()
-                print(f"已点击: {name}")
-                logger.info("选择校区", extra={"campus": name})
-            except Exception:
-                print(f"未找到元素: {name}")
-                raise ClickError(f"未找到元素: {name}") from None
+            logger.info("选择校区", extra={"campus": name})
+            self.campus_page.select(name)
         else:
             self.chain.click_first()
 
@@ -260,17 +232,8 @@ class BookingClient:
         if index is not None:
             self.chain.click(index=index)
         elif name:
-            # Use CSS selector directly - div.text-wrapper-7 contains sport name
-            try:
-                element = self.page.wait_for_selector(
-                    f'div.text-wrapper-7:has-text("{name}")', state="visible", timeout=10000
-                )
-                element.click()
-                print(f"已点击: {name}")
-                logger.info("选择项目", extra={"sport": name})
-            except Exception:
-                print(f"未找到元素: {name}")
-                raise ClickError(f"未找到元素: {name}") from None
+            logger.info("选择项目", extra={"sport": name})
+            self.sport_page.select(name)
         else:
             self.chain.click_first()
 
@@ -361,70 +324,23 @@ class BookingClient:
 
         print("\n正在确认预约...")
 
-        try:
-            # 尝试多种确认按钮选择器
-            confirm_selectors = [
-                'button:has-text("确认")',
-                'button:has-text("提交")',
-                'button:has-text("预约")',
-                'div:has-text("确认预约")',
-                "#confirm",
-                "#submit",
-            ]
+        if self._tracker:
+            self._tracker.start_step("确认预约")
 
-            for selector in confirm_selectors:
-                try:
-                    btn = self.page.wait_for_selector(selector, state="visible", timeout=5000)
-                    btn.click()
-                    print("已点击确认按钮")
+        confirmed = self.confirm_page.confirm()
 
-                    # 等待页面响应，检查结果
-                    self.page.wait_for_timeout(2000)
+        if confirmed:
+            print("[OK] 预约成功（页面确认）")
+            logger.info("确认预约成功")
+            if self._tracker:
+                self._tracker.step_success()
+        else:
+            print("[X] 预约未成功")
+            logger.warning("预约未成功")
+            if self._tracker:
+                self._tracker.step_failed("确认未通过")
 
-                    # 检查失败提示
-                    page_text = self.page.inner_text("body")
-                    fail_keywords = [
-                        "操作过于频繁",
-                        "预约失败",
-                        "已预约过",
-                        "名额已满",
-                        "不可预约",
-                        "已满员",
-                        "已达上限",
-                    ]
-                    for kw in fail_keywords:
-                        if kw in page_text:
-                            print(f"[X] 预约被拒绝: 页面提示「{kw}」")
-                            logger.warning("预约被拒绝", extra={"reason": kw})
-                            if self._tracker:
-                                self._tracker.step_failed(f"预约被拒绝: {kw}")
-                            return False
-
-                    # 检查成功提示
-                    success_keywords = ["预约成功", "提交成功", "操作成功"]
-                    for kw in success_keywords:
-                        if kw in page_text:
-                            print("[OK] 预约成功（页面确认）")
-                            logger.info("确认预约成功")
-                            if self._tracker:
-                                self._tracker.step_success()
-                            return True
-
-                    # 无明确提示，保守返回 False
-                    print("? 预约状态未知，未检测到成功或失败提示")
-                    logger.warning("预约状态未知")
-                    return False
-                except:  # noqa: E722
-                    continue
-
-            print("未找到确认按钮")
-            logger.warning("未找到确认按钮")
-            return False
-
-        except Exception as e:
-            print(f"确认预约失败: {e}")
-            logger.error("确认预约失败", extra={"error": str(e)})
-            return False
+        return confirmed
 
     # ===== 快捷方法 =====
 
