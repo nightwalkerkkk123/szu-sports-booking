@@ -371,9 +371,7 @@ class TestAccountStateRegression:
         calls_per_thread = 10
 
         with ThreadPoolExecutor(max_workers=n_threads) as ex:
-            futures = [
-                ex.submit(account.mark_failure) for _ in range(n_threads * calls_per_thread)
-            ]
+            futures = [ex.submit(account.mark_failure) for _ in range(n_threads * calls_per_thread)]
             for f in futures:
                 f.result()
 

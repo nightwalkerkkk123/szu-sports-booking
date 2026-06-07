@@ -210,9 +210,7 @@ class Chain:
         self.page.keyboard.press(key)
         return self
 
-    def wait_for_load_state(
-        self, state: str = "domcontentloaded", timeout: int = 30000
-    ) -> "Chain":
+    def wait_for_load_state(self, state: str = "domcontentloaded", timeout: int = 30000) -> "Chain":
         """等待页面加载状态（login 等 DOM 加载用）
 
         超时静默（与 BookingClient.login 原行为一致）。

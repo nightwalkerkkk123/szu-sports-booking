@@ -141,8 +141,10 @@ class TestBookingClientSwitchAccount:
         client.login = MagicMock(return_value=client)
 
         # patch page.goto / wait_for_load_state 让 switch_account 的导航不报错
-        with patch.object(client.page, "goto", return_value=None), \
-             patch.object(client.page, "wait_for_load_state", return_value=None):
+        with (
+            patch.object(client.page, "goto", return_value=None),
+            patch.object(client.page, "wait_for_load_state", return_value=None),
+        ):
             client.switch_account("user_x", "pass_x")
 
         client.chain.clear_cookies.assert_called_once()

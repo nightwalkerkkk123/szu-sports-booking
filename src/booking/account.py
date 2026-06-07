@@ -131,7 +131,9 @@ class AccountManager:
         Returns:
             The newly created Account.
         """
-        account = Account(username=username, password=password, priority=priority, metadata=metadata)
+        account = Account(
+            username=username, password=password, priority=priority, metadata=metadata
+        )
         self._accounts.append(account)
         return account
 

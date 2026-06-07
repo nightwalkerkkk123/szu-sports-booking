@@ -22,7 +22,15 @@ class TestConfirmPageSelectors:
     def test_specific_fail_keywords_present(self):
         from booking.selectors.confirm_page import ConfirmPage
 
-        for kw in ("操作过于频繁", "预约失败", "已预约过", "名额已满", "不可预约", "已满员", "已达上限"):
+        for kw in (
+            "操作过于频繁",
+            "预约失败",
+            "已预约过",
+            "名额已满",
+            "不可预约",
+            "已满员",
+            "已达上限",
+        ):
             assert kw in ConfirmPage.FAIL_KEYWORDS
 
     def test_specific_success_keywords_present(self):
