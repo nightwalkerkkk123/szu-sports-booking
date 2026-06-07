@@ -139,3 +139,22 @@ class TestStepTracker:
         summary = tracker.get_summary()
         assert summary["total_steps"] == 10
         assert summary["success_count"] == 10
+
+
+class TestTraceIdGeneration:
+    """Tests for generate_trace_id（从 tracer.py 移过来）。"""
+
+    def test_generate_trace_id_returns_string(self):
+        """generate_trace_id() 返回字符串"""
+        from booking.observability.step_tracker import generate_trace_id
+
+        trace_id = generate_trace_id()
+        assert isinstance(trace_id, str)
+        assert len(trace_id) > 0
+
+    def test_generate_trace_id_is_unique(self):
+        """generate_trace_id() 每次返回不同值"""
+        from booking.observability.step_tracker import generate_trace_id
+
+        ids = {generate_trace_id() for _ in range(100)}
+        assert len(ids) == 100
