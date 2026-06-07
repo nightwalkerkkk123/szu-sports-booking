@@ -5,6 +5,8 @@
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
+from booking.matchers import ContainsMatcher, RegexMatcher, TextMatcher
+
 
 class SlotUnavailableError(Exception):
     """Raised when trying to select an unavailable slot."""
@@ -209,51 +211,54 @@ class FlexibleSlotSelector:
         value: str = None,
     ) -> dict | None:
         """找到匹配的时间段选项"""
-        import re
-
-        # 索引优先
+        # 索引优先（语义跟文本匹配无关）
         if index is not None:
             if 0 <= index < len(options):
                 return options[index]
             print(f"索引 {index} 超出范围 (共 {len(options)} 个)")
             return None
 
-        # 按 value 匹配
+        # 按 value 匹配（语义跟文本匹配无关）
         if value is not None:
             for opt in options:
                 if opt["value"] == value:
                     return opt
             return None
 
-        # 正则匹配
+        # 正则匹配：通过 RegexMatcher
         if regex is not None:
+            matcher = RegexMatcher()
             for opt in options:
-                if re.search(regex, opt["text"]) or (
-                    opt["value"] and re.search(regex, opt["value"])
+                if matcher.match(opt["text"], regex) or (
+                    opt["value"] and matcher.match(opt["value"], regex)
                 ):
                     return opt
             return None
 
-        # 包含匹配
+        # 包含匹配：通过 ContainsMatcher
         if contains is not None:
+            matcher = ContainsMatcher()
             for opt in options:
-                if contains in opt["text"] or (opt["value"] and contains in opt["value"]):
+                if matcher.match(opt["text"], contains) or (
+                    opt["value"] and matcher.match(opt["value"], contains)
+                ):
                     return opt
             return None
 
-        # 精确匹配（target 是字符串）
+        # target 是字符串：精确 + 部分匹配（如 "19:00" 匹配 "19:00-20:00"）
         if target is not None and isinstance(target, str):
+            exact = TextMatcher()
+            partial = ContainsMatcher()
             for opt in options:
-                if opt["text"] == target:
+                if exact.match(opt["text"], target) or (
+                    opt["value"] and exact.match(opt["value"], target)
+                ):
                     return opt
-                if opt["value"] == target:
-                    return opt
-                # 部分匹配（如 "19:00" 匹配 "19:00-20:00"）
-                if target in opt["text"]:
+                if partial.match(opt["text"], target):
                     return opt
             return None
 
-        # 索引（target 是 int）
+        # target 是 int 索引
         if isinstance(target, int):
             if 0 <= target < len(options):
                 return options[target]
@@ -271,62 +276,3 @@ class FlexibleSlotSelector:
         except PlaywrightTimeoutError:
             print("等待时间段超时")
             return False
-
-
-class TimeSlotMatcher:
-    """
-    时间段匹配器 - 专门处理时间段格式的匹配
-
-    支持的格式:
-        - "19:00-20:00"   完整时间段
-        - "19:00"         开始时间
-        - "19:00-20:00:30" 包含秒的时间（少见）
-        - "19:30"         任意包含的时间
-    """
-
-    @staticmethod
-    def match(text: str, target: str) -> bool:
-        """
-        判断 text 是否匹配 target
-
-        参数:
-            text: 时间段文本，如 "19:00-20:00"
-            target: 目标文本，如 "19:00"
-
-        返回:
-            bool: 是否匹配
-        """
-        text = text.strip()
-        target = target.strip()
-
-        # 完全匹配
-        if text == target:
-            return True
-
-        # 开始时间匹配（如 "19:00" 匹配 "19:00-20:00"）
-        if "-" in text:
-            start = text.split("-")[0].strip()
-            if start == target:
-                return True
-
-        # 包含匹配
-        if target in text:
-            return True
-
-        return False
-
-    @staticmethod
-    def extract_time(text: str) -> tuple:
-        """提取时间段的开始和结束时间"""
-        import re
-
-        match = re.search(r"(\d{1,2}:\d{2})", text)
-        if match:
-            return match.group(1)
-        return None
-
-    @staticmethod
-    def parse(time_str: str) -> tuple:
-        """解析时间字符串为 (hour, minute)"""
-        parts = time_str.split(":")
-        return int(parts[0]), int(parts[1])

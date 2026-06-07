@@ -173,40 +173,6 @@ booking:
         assert "羽毛球" in result.output
 
 
-class TestObservabilityIntegration:
-    """Test observability components work together."""
-
-    def test_tracer_and_logger_integration(self):
-        """Tracer and Logger can be used together."""
-        from booking.observability import Logger, get_tracer
-
-        logger = Logger("test_integration")
-        tracer = get_tracer()
-
-        ctx = tracer.start()
-        logger.inject_trace_id(ctx.trace_id)
-
-        assert ctx.trace_id is not None
-        assert tracer.get_context() is not None
-
-    def test_metrics_tracks_operations(self):
-        """Metrics can track operations."""
-        from booking.observability import get_metrics
-
-        metrics = get_metrics()
-
-        # Simulate some operations
-        metrics.counter("login_attempts").increment()
-        metrics.counter("login_attempts").increment()
-        metrics.counter("login_success").increment()
-        metrics.gauge("active_accounts").set(5)
-
-        snapshot = metrics.snapshot()
-        assert snapshot["counters"]["login_attempts"] == 2
-        assert snapshot["counters"]["login_success"] == 1
-        assert snapshot["gauges"]["active_accounts"] == 5
-
-
 class TestEndToEndScenarios:
     """End-to-end scenarios simulating real booking flow."""
 

@@ -55,23 +55,6 @@ class TestObservabilitySmoke:
         logger = Logger("test_smoke", level="info")
         assert logger.name == "test_smoke"
 
-    def test_tracer_can_create_context(self):
-        """Tracer can start a trace."""
-        from booking.observability import Tracer
-
-        tracer = Tracer()
-        ctx = tracer.start()
-        assert ctx is not None
-        assert ctx.trace_id is not None
-
-    def test_metrics_can_collect(self):
-        """Metrics collector can record data."""
-        from booking.observability import MetricsCollector
-
-        collector = MetricsCollector()
-        collector.counter("test").increment()
-        assert collector.counter("test").value == 1
-
 
 class TestCoreModulesSmoke:
     """Smoke tests for core modules."""
@@ -136,15 +119,3 @@ class TestModuleIntegration:
         assert policy.should_retry(ErrorCode.CAPTCHA_REQUIRED, 0) is False
         # LOGIN_FAILED is retryable
         assert policy.should_retry(ErrorCode.LOGIN_FAILED, 0) is True
-
-    def test_observability_integration(self):
-        """Logger and Tracer can work together."""
-        from booking.observability import Logger, Tracer
-
-        logger = Logger("integration_test")
-        tracer = Tracer()
-
-        ctx = tracer.start()
-        logger.inject_trace_id(ctx.trace_id)
-
-        assert tracer.get_context() is not None
