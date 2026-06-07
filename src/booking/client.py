@@ -2,14 +2,21 @@
 预约客户端 - 统一的链式调用接口
 整合浏览器管理、登录、选择器等功能
 """
+
 import logging
-from typing import Union, Optional
-from .chain_builder import Chain, ClickError
-from .step_builder import StepBuilder
+from pathlib import Path
+
+from .chain_builder import Chain
+from .selectors.campus_page import CampusPage
+from .selectors.confirm_page import ConfirmPage
+from .selectors.login_page import LoginPage
 from .selectors.slot_selector import FlexibleSlotSelector, SlotUnavailableError
+from .selectors.sport_page import SportPage
 from .selectors.venue_selector import FlexibleVenueSelector
+from .step_builder import StepBuilder
 
 logger = logging.getLogger("booking.client")
+
 
 class BookingClient:
     """
@@ -33,8 +40,13 @@ class BookingClient:
             .confirm()
     """
 
-    def __init__(self, headless: bool = False, use_fake_browser: bool = False,
-                 trace_id: str = None):
+    def __init__(
+        self,
+        headless: bool = False,
+        use_fake_browser: bool = False,
+        trace_id: str = None,
+        plan=None,
+    ):
         self.page = None
         self.browser = None
         self.headless = headless
@@ -47,15 +59,28 @@ class BookingClient:
         self.step_builder = None
         self.slot_selector = None
         self.venue_selector = None
+        self.login_page = None
+        self.confirm_page = None
+        self.campus_page = None
+        self.sport_page = None
 
         # 如果提供了 trace_id，初始化步骤追踪
         if trace_id:
             from booking.observability.step_tracker import StepTracker
+
             self._tracker = StepTracker(trace_id)
+
+        # Plan / critical points (optional). When set, callers can use
+        # verify_point / verify_all / save_screenshot to record evidence.
+        # Setting a plan does *not* modify any of the existing booking
+        # methods, so existing tests and call sites are unaffected.
+        self._plan = plan
+        self._screenshots_dir = None
 
     def enable_tracking(self, trace_id: str) -> "BookingClient":
         """启用步骤追踪"""
         from booking.observability.step_tracker import StepTracker
+
         self._tracker = StepTracker(trace_id)
         return self
 
@@ -68,12 +93,14 @@ class BookingClient:
         if self.browser is None:
             if self._use_fake_browser:
                 from booking.browser.fake_browser import FakeBrowserLifecycle
+
                 self.browser = FakeBrowserLifecycle()
                 self.browser.launch(headless=self.headless)
                 self.page = self.browser.new_page()
                 self._init_selectors()
             else:
                 from cloakbrowser import launch
+
                 self.browser = launch(headless=self.headless)
                 self.page = self.browser.new_page()
                 self._init_selectors()
@@ -85,6 +112,10 @@ class BookingClient:
         self.step_builder = StepBuilder(self.page)
         self.slot_selector = FlexibleSlotSelector(self.page)
         self.venue_selector = FlexibleVenueSelector(self.page)
+        self.login_page = LoginPage(self.page, chain=self.chain)
+        self.confirm_page = ConfirmPage(self.page, chain=self.chain)
+        self.campus_page = CampusPage(self.page, chain=self.chain)
+        self.sport_page = SportPage(self.page, chain=self.chain)
 
     def _ensure_page_loaded(self, url: str):
         """确保页面已加载"""
@@ -105,7 +136,7 @@ class BookingClient:
     def set_browser(self, browser) -> "BookingClient":
         """设置自定义浏览器实例（用于干跑模式）"""
         self.browser = browser
-        self.page = browser.page if hasattr(browser, 'page') else browser
+        self.page = browser.page if hasattr(browser, "page") else browser
         self._init_selectors()
         return self
 
@@ -134,35 +165,7 @@ class BookingClient:
         if self._tracker:
             self._tracker.start_step("用户登录", details={"username": username})
 
-        # 输入用户名
-        self.page.fill('#username', username)
-        self.page.keyboard.press("Tab")
-
-        # 输入密码
-        self.page.wait_for_selector('#password', state="visible", timeout=20000)
-        self.page.evaluate("""
-            el = document.querySelector('#password');
-            if (el) {
-                el.removeAttribute('readonly');
-                el.classList.remove('no-auto-input');
-            }
-        """)
-        self.page.fill('#password', password)
-
-        # 点击登录
-        self.page.click('#login_submit')
-
-        # 等待登录完成，跳转到预约页面
-        try:
-            self.page.wait_for_load_state("domcontentloaded", timeout=30000)
-        except Exception:
-            pass  # 超时继续，可能已经跳转
-
-        # 等待校区选择按钮出现
-        try:
-            self.page.wait_for_selector('.bh-btn', state="visible", timeout=15000)
-        except Exception:
-            pass  # 超时继续
+        self.login_page.login(username, password)
 
         print("登录完成")
         logger.info("登录完成", extra={"username": username})
@@ -186,17 +189,14 @@ class BookingClient:
         # 1. 登出 CAS
         try:
             logout_url = "https://authserver.szu.edu.cn/authserver/logout"
-            print(f"登出中...")
+            print("登出中...")
             self.page.goto(logout_url)
             self.page.wait_for_load_state("domcontentloaded", timeout=10000)
         except Exception:
             pass  # 登出失败，继续尝试登录
 
         # 2. 清除 cookies
-        try:
-            self.page.context.clear_cookies()
-        except Exception:
-            pass
+        self.chain.clear_cookies()
 
         # 3. 导航回登录页
         try:
@@ -218,15 +218,8 @@ class BookingClient:
         if index is not None:
             self.chain.click(index=index)
         elif name:
-            # Use CSS selector directly - .bh-btn contains the text
-            try:
-                element = self.page.wait_for_selector(f'.bh-btn:has-text("{name}")', state="visible", timeout=10000)
-                element.click()
-                print(f"已点击: {name}")
-                logger.info("选择校区", extra={"campus": name})
-            except Exception as e:
-                print(f"未找到元素: {name}")
-                raise ClickError(f"未找到元素: {name}")
+            logger.info("选择校区", extra={"campus": name})
+            self.campus_page.select(name)
         else:
             self.chain.click_first()
 
@@ -239,15 +232,8 @@ class BookingClient:
         if index is not None:
             self.chain.click(index=index)
         elif name:
-            # Use CSS selector directly - div.text-wrapper-7 contains sport name
-            try:
-                element = self.page.wait_for_selector(f'div.text-wrapper-7:has-text("{name}")', state="visible", timeout=10000)
-                element.click()
-                print(f"已点击: {name}")
-                logger.info("选择项目", extra={"sport": name})
-            except Exception as e:
-                print(f"未找到元素: {name}")
-                raise ClickError(f"未找到元素: {name}")
+            logger.info("选择项目", extra={"sport": name})
+            self.sport_page.select(name)
         else:
             self.chain.click_first()
 
@@ -262,16 +248,12 @@ class BookingClient:
         if name:
             # 精确匹配场地名称
             self.slot_selector.select(
-                target=name,
-                container_selector="div.group-2",
-                check_availability=True
+                target=name, container_selector="div.group-2", check_availability=True
             )
         elif index is not None:
             # 按索引选择
             self.slot_selector.select(
-                index=index,
-                container_selector="div.group-2",
-                check_availability=True
+                index=index, container_selector="div.group-2", check_availability=True
             )
         else:
             # 默认选择第一个可用的场地
@@ -281,10 +263,10 @@ class BookingClient:
             # 场地和可用时间段都有 frame-child1，无法用它区分。
             # 唯一可靠区分：场地文本不包含时间格式 HH:MM-HH:MM
             import re
+
             time_pattern = re.compile(r"\d{2}:\d{2}-\d{2}:\d{2}")
             venue_options = [
-                o for o in available_options
-                if not time_pattern.search(o.get("text", ""))
+                o for o in available_options if not time_pattern.search(o.get("text", ""))
             ]
 
             if not venue_options:
@@ -296,7 +278,7 @@ class BookingClient:
 
         return self.wait(1)
 
-    def select_date(self, selector: Union[int, str] = 0) -> "BookingClient":
+    def select_date(self, selector: int | str = 0) -> "BookingClient":
         """
         选择日期
 
@@ -310,11 +292,11 @@ class BookingClient:
 
     def select_time_slot(
         self,
-        target: Union[str, int] = None,
+        target: str | int = None,
         *,
         index: int = None,
         contains: str = None,
-        regex: str = None
+        regex: str = None,
     ) -> "BookingClient":
         """
         选择时间段
@@ -332,7 +314,7 @@ class BookingClient:
             index=index,
             contains=contains,
             regex=regex,
-            container_selector="div.group-2"
+            container_selector="div.group-2",
         )
         return self.wait(1)
 
@@ -342,63 +324,23 @@ class BookingClient:
 
         print("\n正在确认预约...")
 
-        try:
-            # 尝试多种确认按钮选择器
-            confirm_selectors = [
-                'button:has-text("确认")',
-                'button:has-text("提交")',
-                'button:has-text("预约")',
-                'div:has-text("确认预约")',
-                '#confirm',
-                '#submit'
-            ]
+        if self._tracker:
+            self._tracker.start_step("确认预约")
 
-            for selector in confirm_selectors:
-                try:
-                    btn = self.page.wait_for_selector(selector, state="visible", timeout=5000)
-                    btn.click()
-                    print("已点击确认按钮")
+        confirmed = self.confirm_page.confirm()
 
-                    # 等待页面响应，检查结果
-                    self.page.wait_for_timeout(2000)
+        if confirmed:
+            print("[OK] 预约成功（页面确认）")
+            logger.info("确认预约成功")
+            if self._tracker:
+                self._tracker.step_success()
+        else:
+            print("[X] 预约未成功")
+            logger.warning("预约未成功")
+            if self._tracker:
+                self._tracker.step_failed("确认未通过")
 
-                    # 检查失败提示
-                    page_text = self.page.inner_text("body")
-                    fail_keywords = ["操作过于频繁", "预约失败", "已预约过", "名额已满",
-                                     "不可预约", "已满员", "已达上限"]
-                    for kw in fail_keywords:
-                        if kw in page_text:
-                            print(f"[X] 预约被拒绝: 页面提示「{kw}」")
-                            logger.warning("预约被拒绝", extra={"reason": kw})
-                            if self._tracker:
-                                self._tracker.step_failed(f"预约被拒绝: {kw}")
-                            return False
-
-                    # 检查成功提示
-                    success_keywords = ["预约成功", "提交成功", "操作成功"]
-                    for kw in success_keywords:
-                        if kw in page_text:
-                            print("[OK] 预约成功（页面确认）")
-                            logger.info("确认预约成功")
-                            if self._tracker:
-                                self._tracker.step_success()
-                            return True
-
-                    # 无明确提示，保守返回 False
-                    print("? 预约状态未知，未检测到成功或失败提示")
-                    logger.warning("预约状态未知")
-                    return False
-                except:
-                    continue
-
-            print("未找到确认按钮")
-            logger.warning("未找到确认按钮")
-            return False
-
-        except Exception as e:
-            print(f"确认预约失败: {e}")
-            logger.error("确认预约失败", extra={"error": str(e)})
-            return False
+        return confirmed
 
     # ===== 快捷方法 =====
 
@@ -446,7 +388,7 @@ class BookingClient:
             action = step.get("action")
             target = step.get("target")
 
-            print(f"[步骤 {i+1}] {action}: {target}")
+            print(f"[步骤 {i + 1}] {action}: {target}")
 
             if action == "click":
                 self.chain.click(target)
@@ -467,7 +409,7 @@ class BookingClient:
         sport: str = None,
         date: int = 0,
         time_slot: str = None,
-        venue: str = None
+        venue: str = None,
     ) -> bool:
         """
         一键预约
@@ -502,6 +444,163 @@ class BookingClient:
         print("=" * 50 + "\n")
 
         return result
+
+    # ===== Plan / critical points (Webwright-style verification) =====
+
+    def set_plan(self, plan) -> "BookingClient":
+        """Attach a :class:Plan and return `self` for chaining.
+
+        When a plan is attached, callers may use :meth:erify_point,
+        :meth:erify_all, and :meth:save_screenshot to record evidence.
+        Setting a plan does *not* modify any of the existing booking methods.
+        """
+        self._plan = plan
+        return self
+
+    def get_plan(self):
+        """Return the current :class:Plan or `None`."""
+        return self._plan
+
+    def set_screenshots_dir(self, path) -> None:
+        """Set the directory where :meth:save_screenshot writes PNGs.
+
+        Usually called by the CLI when a :class:RunManager is active; the
+        default of `None` means screenshots are kept in memory only.
+        """
+        self._screenshots_dir = Path(path) if path else None
+
+    def save_screenshot(self, name: str, png_bytes: bytes | None = None) -> str | None:
+        """Persist a screenshot and return its path.
+
+        Args:
+            name: Filename suffix (e.g. `"after_login"`).
+            png_bytes: PNG bytes. If `None`, captures the current page.
+
+        Returns:
+            Absolute path string on success, `None` if no screenshots dir
+            is configured or capture failed.
+        """
+        if self._screenshots_dir is None:
+            return None
+        self._screenshots_dir.mkdir(parents=True, exist_ok=True)
+        out = self._screenshots_dir / f"{name}.png"
+        try:
+            if png_bytes is None:
+                if self.page is None:
+                    return None
+                png_bytes = self.page.screenshot()
+            out.write_bytes(png_bytes)
+            return str(out)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("save_screenshot failed: %s", exc)
+            return None
+
+    def verify_point(self, name: str, status=None, note: str | None = None) -> bool:
+        """Manually mark a critical point.
+
+        Args:
+            name: Critical point name.
+            status: `PointStatus.PASSED` / `PointStatus.FAILED` /
+                `PointStatus.SKIPPED`. If `None`, the point's status is
+                left unchanged and only `note` is attached.
+            note: Free-form note (e.g. failure reason).
+
+        Returns:
+            `True` if a point with that name exists.
+        """
+        if self._plan is None:
+            return False
+        point = self._plan.get(name)
+        if point is None:
+            return False
+        if status is not None:
+            point.mark(status, note)
+        elif note is not None:
+            point.note = note
+        return True
+
+    def verify_all(self) -> dict:
+        """Run evidence-based checks for every PENDING point.
+
+        For each point whose `evidence_type` is `SCREENSHOT` /
+        `SELECTOR` / `TEXT_PRESENT`, this method inspects the current
+        page (or, for `SCREENSHOT`, the screenshots directory) and
+        updates the point's status. `CUSTOM` points are left untouched.
+
+        Returns:
+            Summary dict `{passed, failed, skipped, pending}` keyed by
+            status name. Safe to call when no plan is attached (returns
+            an empty summary).
+        """
+        from booking.observability.plan import (
+            EvidenceType,
+            PointStatus,
+        )
+
+        if self._plan is None:
+            return {"passed": 0, "failed": 0, "skipped": 0, "pending": 0}
+
+        for point in self._plan.points:
+            if point.status is not PointStatus.PENDING:
+                continue
+            if point.evidence_type is EvidenceType.CUSTOM:
+                continue
+            ok, reason = self._check_evidence(point)
+            point.mark(
+                PointStatus.PASSED if ok else PointStatus.FAILED,
+                None if ok else reason,
+            )
+            if (
+                point.evidence_type is EvidenceType.SCREENSHOT
+                and ok
+                and self._screenshots_dir is not None
+            ):
+                rel = Path(self._screenshots_dir).name
+                point.evidence_path = f"{rel}/{point.evidence_value}"
+
+        return {
+            "passed": self._plan.passed,
+            "failed": self._plan.failed,
+            "skipped": sum(1 for p in self._plan.points if p.status is PointStatus.SKIPPED),
+            "pending": self._plan.pending,
+        }
+
+    def _check_evidence(self, point) -> tuple[bool, str | None]:
+        """Check a single point's evidence against the current page.
+
+        Returns:
+            `(ok, reason)`. `ok` is True when evidence is satisfied;
+            `reason` carries a short message on failure.
+        """
+        from booking.observability.plan import EvidenceType
+
+        if point.evidence_type is EvidenceType.SCREENSHOT:
+            if self._screenshots_dir is None:
+                return False, "no screenshots dir configured"
+            target = Path(self._screenshots_dir) / point.evidence_value
+            return (target.exists(), f"missing screenshot: {target.name}")
+        if self.page is None:
+            return False, "page not initialised"
+        if point.evidence_type is EvidenceType.SELECTOR:
+            for sel in (point.evidence_value or "").split(","):
+                sel = sel.strip()
+                if not sel:
+                    continue
+                try:
+                    if self.page.query_selector(sel):
+                        return True, None
+                except Exception:  # noqa: BLE001, S110
+                    pass
+            return False, f"selector not found: {point.evidence_value}"
+        if point.evidence_type is EvidenceType.TEXT_PRESENT:
+            try:
+                body = self.page.inner_text("body")
+            except Exception as exc:  # noqa: BLE001
+                return False, f"page unreachable: {exc}"
+            if (point.evidence_value or "") in body:
+                return True, None
+            return False, f"text not in body: {point.evidence_value!r}"
+        return False, f"unsupported evidence_type: {point.evidence_type}"
 
     # ===== 上下文管理器 =====
 

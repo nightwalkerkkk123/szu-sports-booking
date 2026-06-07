@@ -19,6 +19,14 @@ logs/
 debug/
 data/*.db
 
+# User-specific runtime state (session cookies, rate-limit state)
+# Never commit these — they contain active auth tokens.
+data/cookies/
+data/rate_limits.json
+
+# HAR captures (large + may contain session cookies / PII)
+*.har
+
 # Environment
 .env
 
@@ -36,3 +44,7 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Go binaries
+surf-proxy/surf-proxy
+*.exe

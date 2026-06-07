@@ -1,8 +1,9 @@
 """
 灵活场地选择器 - 支持多级选择（场馆类型 -> 具体场地）
 """
-from typing import Union, Optional, List
-from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
+
+from playwright.sync_api import Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 
 class FlexibleVenueSelector:
@@ -28,12 +29,7 @@ class FlexibleVenueSelector:
         self.container_selector = container_selector or self.DEFAULT_CONTAINER_SELECTOR
 
     def select(
-        self,
-        venue_name: str = None,
-        *,
-        index: int = None,
-        contains: str = None,
-        regex: str = None
+        self, venue_name: str = None, *, index: int = None, contains: str = None, regex: str = None
     ) -> bool:
         """
         选择场地
@@ -74,7 +70,7 @@ class FlexibleVenueSelector:
         """选择第一个场地"""
         return self.select(index=0)
 
-    def get_all(self, container_selector: str = None) -> List[dict]:
+    def get_all(self, container_selector: str = None) -> list[dict]:
         """
         获取所有可用场地
 
@@ -93,7 +89,7 @@ class FlexibleVenueSelector:
                 "div[class*='venue']",
                 "div[class*='court']",
                 "div[class*='field']",
-                "div.item:has(input[type='radio'])"
+                "div.item:has(input[type='radio'])",
             ]
 
             containers = []
@@ -118,11 +114,7 @@ class FlexibleVenueSelector:
                     radio = container.query_selector('input[type="radio"]')
                     value = radio.get_attribute("value") if radio else None
 
-                    venues.append({
-                        "text": text,
-                        "value": value,
-                        "element": container
-                    })
+                    venues.append({"text": text, "value": value, "element": container})
                 except Exception:
                     continue
 
@@ -134,12 +126,12 @@ class FlexibleVenueSelector:
 
     def _find_matched_venue(
         self,
-        venues: List[dict],
+        venues: list[dict],
         venue_name: str = None,
         index: int = None,
         contains: str = None,
-        regex: str = None
-    ) -> Optional[dict]:
+        regex: str = None,
+    ) -> dict | None:
         """找到匹配的场地"""
         import re
 
@@ -226,10 +218,10 @@ class VenueHierarchySelector:
         """一步选择完整的场地名称"""
         return self.venue_selector.select(full_name)
 
-    def get_categories(self) -> List[dict]:
+    def get_categories(self) -> list[dict]:
         """获取所有场馆类型"""
         return self.category_selector.get_all()
 
-    def get_venues(self) -> List[dict]:
+    def get_venues(self) -> list[dict]:
         """获取所有具体场地"""
         return self.venue_selector.get_all()

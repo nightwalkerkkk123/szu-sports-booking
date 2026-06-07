@@ -1,4 +1,5 @@
 """Error code definitions for booking system."""
+
 from dataclasses import dataclass
 from enum import Enum
 
@@ -55,7 +56,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=True,
         should_alert=False,
-        hint="检查账号密码是否正确"
+        hint="检查账号密码是否正确",
     ),
     ErrorCode.LOGIN_TIMEOUT: ErrorInfo(
         code=ErrorCode.LOGIN_TIMEOUT,
@@ -64,7 +65,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=True,
         should_alert=False,
-        hint="网络可能较慢，增加超时时间后重试"
+        hint="网络可能较慢，增加超时时间后重试",
     ),
     ErrorCode.PASSWORD_INCORRECT: ErrorInfo(
         code=ErrorCode.PASSWORD_INCORRECT,
@@ -73,9 +74,8 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=True,
         should_screenshot=False,
         should_alert=True,
-        hint="密码错误，切换到其他账号"
+        hint="密码错误，切换到其他账号",
     ),
-
     # Account errors
     ErrorCode.ACCOUNT_LOCKED: ErrorInfo(
         code=ErrorCode.ACCOUNT_LOCKED,
@@ -84,7 +84,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=True,
         should_screenshot=True,
         should_alert=True,
-        hint="账号被锁定，切换到其他账号"
+        hint="账号被锁定，切换到其他账号",
     ),
     ErrorCode.ACCOUNT_DISABLED: ErrorInfo(
         code=ErrorCode.ACCOUNT_DISABLED,
@@ -93,7 +93,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=True,
         should_screenshot=False,
         should_alert=True,
-        hint="账号被禁用，切换到其他账号"
+        hint="账号被禁用，切换到其他账号",
     ),
     ErrorCode.CAPTCHA_REQUIRED: ErrorInfo(
         code=ErrorCode.CAPTCHA_REQUIRED,
@@ -102,9 +102,8 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=True,
         should_screenshot=True,
         should_alert=True,
-        hint="验证码无法自动处理，切换账号或停止任务"
+        hint="验证码无法自动处理，切换账号或停止任务",
     ),
-
     # Page errors
     ErrorCode.PAGE_LOAD_TIMEOUT: ErrorInfo(
         code=ErrorCode.PAGE_LOAD_TIMEOUT,
@@ -113,7 +112,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=True,
         should_alert=False,
-        hint="网络可能较慢，增加超时时间后重试"
+        hint="网络可能较慢，增加超时时间后重试",
     ),
     ErrorCode.ELEMENT_NOT_FOUND: ErrorInfo(
         code=ErrorCode.ELEMENT_NOT_FOUND,
@@ -122,7 +121,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=True,
         should_alert=False,
-        hint="页面结构可能已变化，更新选择器"
+        hint="页面结构可能已变化，更新选择器",
     ),
     ErrorCode.ELEMENT_NOT_CLICKABLE: ErrorInfo(
         code=ErrorCode.ELEMENT_NOT_CLICKABLE,
@@ -131,9 +130,8 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=True,
         should_alert=False,
-        hint="元素被遮挡或页面正在加载，等待后重试"
+        hint="元素被遮挡或页面正在加载，等待后重试",
     ),
-
     # Booking errors
     ErrorCode.NO_AVAILABLE_SLOT: ErrorInfo(
         code=ErrorCode.NO_AVAILABLE_SLOT,
@@ -142,7 +140,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=False,
         should_alert=False,
-        hint="当前时间段已满，可尝试其他时间段"
+        hint="当前时间段已满，可尝试其他时间段",
     ),
     ErrorCode.SLOT_ALREADY_TAKEN: ErrorInfo(
         code=ErrorCode.SLOT_ALREADY_TAKEN,
@@ -151,7 +149,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=False,
         should_alert=False,
-        hint="时间段被其他人抢走，尝试其他时间段"
+        hint="时间段被其他人抢走，尝试其他时间段",
     ),
     ErrorCode.SUBMIT_FAILED: ErrorInfo(
         code=ErrorCode.SUBMIT_FAILED,
@@ -160,7 +158,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=True,
         should_alert=False,
-        hint="提交按钮点击失败，重试或截图排查"
+        hint="提交按钮点击失败，重试或截图排查",
     ),
     ErrorCode.SUBMIT_TIMEOUT: ErrorInfo(
         code=ErrorCode.SUBMIT_TIMEOUT,
@@ -169,9 +167,8 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=True,
         should_alert=False,
-        hint="提交响应超时，可能已成功需检查"
+        hint="提交响应超时，可能已成功需检查",
     ),
-
     # System errors
     ErrorCode.NETWORK_ERROR: ErrorInfo(
         code=ErrorCode.NETWORK_ERROR,
@@ -180,7 +177,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=False,
         should_alert=False,
-        hint="网络不稳定，等待后重试"
+        hint="网络不稳定，等待后重试",
     ),
     ErrorCode.BROWSER_CRASHED: ErrorInfo(
         code=ErrorCode.BROWSER_CRASHED,
@@ -189,7 +186,7 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=True,
         should_alert=True,
-        hint="浏览器异常重启，重试任务"
+        hint="浏览器异常重启，重试任务",
     ),
     ErrorCode.UNKNOWN_ERROR: ErrorInfo(
         code=ErrorCode.UNKNOWN_ERROR,
@@ -198,19 +195,22 @@ ERROR_MAP: dict[ErrorCode, ErrorInfo] = {
         should_switch_account=False,
         should_screenshot=True,
         should_alert=True,
-        hint="未知错误，查看日志和截图排查"
+        hint="未知错误，查看日志和截图排查",
     ),
 }
 
 
 def get_error_info(code: ErrorCode) -> ErrorInfo:
     """Get ErrorInfo for an error code."""
-    return ERROR_MAP.get(code, ErrorInfo(
-        code=code,
-        message=code.value,
-        is_retryable=False,
-        should_switch_account=False,
-        should_screenshot=True,
-        should_alert=True,
-        hint="未知错误码"
-    ))
+    return ERROR_MAP.get(
+        code,
+        ErrorInfo(
+            code=code,
+            message=code.value,
+            is_retryable=False,
+            should_switch_account=False,
+            should_screenshot=True,
+            should_alert=True,
+            hint="未知错误码",
+        ),
+    )

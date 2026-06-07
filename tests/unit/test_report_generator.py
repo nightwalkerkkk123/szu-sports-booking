@@ -1,4 +1,5 @@
 """Tests for ReportGenerator."""
+
 from pathlib import Path
 
 import pytest
@@ -17,8 +18,7 @@ class TestReportGenerator:
         rm.log("程序启动", level="INFO", campus="粤海校区")
         rm.log_step("初始化浏览器", "success", duration_ms=100)
         rm.log_step("用户登录", "success", duration_ms=500)
-        rm.log_step("选择校区", "failed", duration_ms=0, error="未找到元素",
-                     campus="丽湖校区")
+        rm.log_step("选择校区", "failed", duration_ms=0, error="未找到元素", campus="丽湖校区")
         rm.end_run(success=False, error_message="选择校区失败")
 
         html_path = generate_html_report("test-report", rm)
@@ -35,7 +35,7 @@ class TestReportGenerator:
         rm.end_run(success=False)
 
         html_path = generate_html_report("stats-report", rm)
-        content = Path(html_path).read_text()
+        content = Path(html_path).read_text(encoding="utf-8")
 
         # Verify stats are present
         assert "stats-report" in content
@@ -51,7 +51,7 @@ class TestReportGenerator:
         rm.end_run(success=True)
 
         html_path = generate_html_report("steps-report", rm)
-        content = Path(html_path).read_text()
+        content = Path(html_path).read_text(encoding="utf-8")
 
         assert "初始化" in content
         assert "success" in content
@@ -63,7 +63,7 @@ class TestReportGenerator:
         rm.end_run(success=True)
 
         html_path = generate_html_report("valid-html", rm)
-        content = Path(html_path).read_text()
+        content = Path(html_path).read_text(encoding="utf-8")
 
         assert "<!DOCTYPE html>" in content
         assert "<html" in content
@@ -81,7 +81,7 @@ class TestReportGenerator:
         rm.end_run(success=False)
 
         html_path = generate_html_report("logs-report", rm)
-        content = Path(html_path).read_text()
+        content = Path(html_path).read_text(encoding="utf-8")
 
         assert "启动" in content
         assert "警告" in content
@@ -100,7 +100,7 @@ class TestReportGenerator:
         rm.end_run(success=True)
 
         html_path = generate_html_report("empty-steps", rm)
-        content = Path(html_path).read_text()
+        content = Path(html_path).read_text(encoding="utf-8")
         assert "暂无步骤记录" in content
 
     def test_report_empty_logs(self, tmp_path):
@@ -110,7 +110,7 @@ class TestReportGenerator:
         rm.end_run(success=True)
 
         html_path = generate_html_report("empty-logs", rm)
-        content = Path(html_path).read_text()
+        content = Path(html_path).read_text(encoding="utf-8")
         assert "暂无日志记录" in content
 
     def test_report_dry_run(self, tmp_path):
@@ -121,5 +121,5 @@ class TestReportGenerator:
         rm.end_run(success=True)
 
         html_path = generate_html_report("dry-run-report", rm)
-        content = Path(html_path).read_text()
+        content = Path(html_path).read_text(encoding="utf-8")
         assert "干跑模式" in content

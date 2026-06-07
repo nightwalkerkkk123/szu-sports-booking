@@ -7,10 +7,12 @@ Supports multi-level configuration:
 4. config.yaml
 5. Default values (lowest priority)
 """
+
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, List, Dict, Any
-import os
+from typing import Any
+
 import yaml
 
 
@@ -26,7 +28,7 @@ class Config:
     default_time_slot: str = "19:00-20:00"
 
     # Multi-account settings
-    accounts: List[Dict[str, Any]] = field(default_factory=list)
+    accounts: list[dict[str, Any]] = field(default_factory=list)
 
     # Retry settings
     retry_max_attempts: int = 3
@@ -59,7 +61,7 @@ class Config:
         if not path.exists():
             raise FileNotFoundError(f"Config file not found: {config_path}")
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
 
         return cls._merge_data(data)
@@ -115,6 +117,7 @@ class Config:
         """自动加载 .env 文件到 os.environ。"""
         try:
             from dotenv import load_dotenv
+
             load_dotenv()
         except ImportError:
             pass

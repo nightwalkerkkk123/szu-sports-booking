@@ -1,4 +1,5 @@
 """Reporter for generating booking reports."""
+
 from datetime import datetime
 from typing import Any
 

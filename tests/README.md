@@ -68,28 +68,36 @@ make cov
 | 测试文件 | 被测模块 | 测试数 |
 |----------|----------|--------|
 | test_matchers.py | matchers/* | 37 |
-| test_pool.py | pool.py | 31 |
+| test_pool.py | pool.py | 36 |
 | test_browser.py | browser/* | 25 |
+| test_chain_builder.py | chain_builder.py | 22 |
 | test_step_builder.py | step_builder.py | 20 |
 | test_account.py | account.py | 19 |
 | test_run_manager.py | run_manager.py | 19 |
-| test_chain_builder.py | chain_builder.py | 17 |
+| test_selectors.py | selectors/* | 18 |
+| test_step_tracker.py | step_tracker.py | 17 |
 | test_retry.py | retry.py | 17 |
-| test_selectors.py | selectors/* | 16 |
-| test_step_tracker.py | step_tracker.py | 15 |
-| test_smoke.py | 冒烟测试 | 14 |
-| test_integration.py | 集成测试 | 13 |
+| test_plan.py | plan.py | 15 |
+| test_risk_scorer.py | risk_scorer.py | 14 |
+| test_client.py | client.py | 14 |
+| test_confirm_page.py | selectors/confirm_page.py | 13 |
 | test_errors.py | errors.py | 12 |
-| test_metrics.py | metrics.py | 12 |
-| test_client.py | client.py | 12 |
+| test_smoke.py | 冒烟测试 | 11 |
+| test_integration.py | 集成测试 | 11 |
 | test_cli.py | cli.py | 11 |
-| test_tracer.py | tracer.py | 11 |
 | test_config.py | config.py | 10 |
+| test_router.py | router.py | 9 |
 | test_report_generator.py | report_generator.py | 9 |
+| test_rate_limiter.py | rate_limiter.py | 8 |
 | test_database.py | database.py | 8 |
 | test_logger.py | logger.py | 8 |
-| test_trace_viewer.py | trace_viewer.py | 6 |
-| **总计** | | **342** |
+| test_login_page.py | selectors/login_page.py | 6 |
+| test_escape_hatch.py | escape_hatch | 5 |
+| test_render_log_html.py | render_log_html | 4 |
+| test_campus_page.py | selectors/campus_page.py | 4 |
+| test_sport_page.py | selectors/sport_page.py | 4 |
+| test_infra_backends.py | infra backends | 3 |
+| **总计** | | **409** |
 
 ## 测试覆盖率目标
 

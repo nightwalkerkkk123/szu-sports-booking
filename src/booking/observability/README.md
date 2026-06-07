@@ -1,6 +1,6 @@
 # observability
 
-可观测性模块：日志、追踪、指标、报告。
+可观测性模块：日志、追踪、报告。
 
 ## 架构
 
@@ -8,13 +8,11 @@
 observability/
 ├── __init__.py
 ├── logger.py           # Logger（结构化日志、JSON/文本双格式）
-├── tracer.py           # Tracer（trace_id 追踪、日志关联）
-├── metrics.py          # MetricsCollector（Counter/Gauge/Histogram）
 ├── reporter.py         # Reporter（预约报告摘要）
 ├── run_manager.py      # RunManager（Run 隔离目录 + SQLite 索引）
 ├── report_generator.py # HTML 报告生成（含自动打开浏览器）
 ├── step_tracker.py     # StepTracker（步骤追踪 + 摘要报告）
-└── trace_viewer.py     # Trace HTML 查看器
+└── plan.py             # Plan（执行计划）
 ```
 
 ## 使用示例
@@ -26,27 +24,6 @@ from booking.observability import Logger, get_logger
 
 logger = Logger("booking")
 logger.info("预约开始", trace_id="abc-123")
-```
-
-### Tracer
-
-```python
-from booking.observability import Tracer, get_tracer
-
-tracer = get_tracer()
-ctx = tracer.start()
-ctx.tag("user", "test_user")
-ctx.event("login_attempt")
-```
-
-### Metrics
-
-```python
-from booking.observability import get_metrics
-
-metrics = get_metrics()
-metrics.counter("booking_attempts").increment()
-metrics.histogram("booking_duration").record(1500)
 ```
 
 ### Reporter
@@ -63,8 +40,6 @@ print(f"成功率: {summary['success_rate']}")
 
 每个模块都提供 `get_*()` 函数获取全局实例：
 - `get_logger(name)`
-- `get_tracer()`
-- `get_metrics()`
 
 ## 日志格式
 

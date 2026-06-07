@@ -1,7 +1,6 @@
 """Tests for booking.retry module - Retry policy and strategies."""
+
 import pytest
-from unittest.mock import Mock, patch
-import time
 
 
 class TestRetryStrategy:
@@ -34,10 +33,7 @@ class TestRetryPolicy:
         from booking.retry import RetryPolicy, RetryStrategy
 
         policy = RetryPolicy(
-            max_attempts=5,
-            base_delay=2.0,
-            max_delay=60.0,
-            strategy=RetryStrategy.LINEAR_BACKOFF
+            max_attempts=5, base_delay=2.0, max_delay=60.0, strategy=RetryStrategy.LINEAR_BACKOFF
         )
         assert policy.max_attempts == 5
         assert policy.base_delay == 2.0
@@ -50,8 +46,8 @@ class TestShouldRetry:
 
     def test_should_retry_returns_false_when_max_attempts_reached(self):
         """should_retry returns False when attempt >= max_attempts."""
-        from booking.retry import RetryPolicy, RetryStrategy
         from booking.errors import ErrorCode
+        from booking.retry import RetryPolicy
 
         policy = RetryPolicy(max_attempts=3)
 
@@ -61,8 +57,8 @@ class TestShouldRetry:
 
     def test_should_retry_returns_true_for_retryable_error(self):
         """should_retry returns True for retryable error codes."""
-        from booking.retry import RetryPolicy
         from booking.errors import ErrorCode
+        from booking.retry import RetryPolicy
 
         policy = RetryPolicy(max_attempts=3)
 
@@ -72,8 +68,8 @@ class TestShouldRetry:
 
     def test_should_retry_returns_false_for_non_retryable_error(self):
         """should_retry returns False for non-retryable error codes."""
-        from booking.retry import RetryPolicy
         from booking.errors import ErrorCode
+        from booking.retry import RetryPolicy
 
         policy = RetryPolicy(max_attempts=3)
 
@@ -83,8 +79,8 @@ class TestShouldRetry:
 
     def test_should_retry_returns_false_for_known_non_retryable_error(self):
         """should_retry returns False for error codes marked non-retryable."""
-        from booking.retry import RetryPolicy
         from booking.errors import ErrorCode
+        from booking.retry import RetryPolicy
 
         policy = RetryPolicy(max_attempts=3)
 
@@ -110,10 +106,7 @@ class TestGetDelay:
         """LINEAR_BACKOFF strategy returns base_delay * attempt."""
         from booking.retry import RetryPolicy, RetryStrategy
 
-        policy = RetryPolicy(
-            strategy=RetryStrategy.LINEAR_BACKOFF,
-            base_delay=2.0
-        )
+        policy = RetryPolicy(strategy=RetryStrategy.LINEAR_BACKOFF, base_delay=2.0)
 
         assert policy.get_delay(attempt=0) == 0
         assert policy.get_delay(attempt=1) == 2.0
@@ -124,9 +117,7 @@ class TestGetDelay:
         from booking.retry import RetryPolicy, RetryStrategy
 
         policy = RetryPolicy(
-            strategy=RetryStrategy.EXPONENTIAL_BACKOFF,
-            base_delay=1.0,
-            max_delay=30.0
+            strategy=RetryStrategy.EXPONENTIAL_BACKOFF, base_delay=1.0, max_delay=30.0
         )
 
         # attempt=0: 1.0 * 2^0 = 1.0
@@ -146,8 +137,8 @@ class TestRetryWithPolicy:
 
     def test_successful_call_returns_result(self):
         """Successful function call returns result without retrying."""
-        from booking.retry import retry_with_policy, RetryPolicy
         from booking.errors import ErrorCode
+        from booking.retry import RetryPolicy, retry_with_policy
 
         policy = RetryPolicy(max_attempts=3)
 
@@ -159,8 +150,8 @@ class TestRetryWithPolicy:
 
     def test_retries_on_retryable_error(self):
         """Retries when should_retry returns True."""
-        from booking.retry import retry_with_policy, RetryPolicy, BookingError
         from booking.errors import ErrorCode
+        from booking.retry import BookingError, RetryPolicy, retry_with_policy
 
         policy = RetryPolicy(max_attempts=3, base_delay=0.01)
 
@@ -179,8 +170,8 @@ class TestRetryWithPolicy:
 
     def test_raises_after_max_attempts(self):
         """Raises after exhausting max_attempts."""
-        from booking.retry import retry_with_policy, RetryPolicy, BookingError
         from booking.errors import ErrorCode
+        from booking.retry import BookingError, RetryPolicy, retry_with_policy
 
         policy = RetryPolicy(max_attempts=3, base_delay=0.01)
 
@@ -194,8 +185,8 @@ class TestRetryWithPolicy:
 
     def test_raises_immediately_on_non_retryable_error(self):
         """Raises immediately for non-retryable errors without retrying."""
-        from booking.retry import retry_with_policy, RetryPolicy, BookingError
         from booking.errors import ErrorCode
+        from booking.retry import BookingError, RetryPolicy, retry_with_policy
 
         policy = RetryPolicy(max_attempts=3, base_delay=0.01)
 
@@ -226,16 +217,16 @@ class TestBookingError:
 
     def test_booking_error_is_runtime_error(self):
         """BookingError is a RuntimeError."""
-        from booking.retry import BookingError
         from booking.errors import ErrorCode
+        from booking.retry import BookingError
 
         error = BookingError(ErrorCode.LOGIN_FAILED)
         assert isinstance(error, RuntimeError)
 
     def test_booking_error_message_contains_code(self):
         """BookingError message contains error code value."""
-        from booking.retry import BookingError
         from booking.errors import ErrorCode
+        from booking.retry import BookingError
 
         error = BookingError(ErrorCode.PAGE_LOAD_TIMEOUT)
         assert "PAGE_LOAD_TIMEOUT" in str(error)

@@ -1,7 +1,8 @@
 """Tests for booking.config module - Configuration management."""
-import os
-import pytest
+
 from pathlib import Path
+
+import pytest
 
 
 class TestConfigLoad:
@@ -10,6 +11,7 @@ class TestConfigLoad:
     def test_load_reads_yaml_file(self, sample_config_yaml, mock_env):
         """Config loads values from YAML file."""
         import sys
+
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
         from booking.config import Config
 
@@ -20,6 +22,7 @@ class TestConfigLoad:
     def test_load_returns_config_object(self, sample_config_yaml, mock_env):
         """Config.load returns a Config instance."""
         import sys
+
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
         from booking.config import Config
 
@@ -33,6 +36,7 @@ class TestConfigDefaults:
     def test_default_venue_url(self, mock_env):
         """Default venue URL is set."""
         import sys
+
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
         from booking.config import Config
 
@@ -43,6 +47,7 @@ class TestConfigDefaults:
     def test_default_retry_values(self, mock_env):
         """Default retry values are set."""
         import sys
+
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
         from booking.config import Config
 
@@ -72,7 +77,8 @@ class TestConfigMergeRegression:
         from booking.config import Config
 
         config_path = temp_dir / "with_accounts.yaml"
-        config_path.write_text("""
+        config_path.write_text(
+            """
 booking:
   default_campus: "粤海校区"
   default_sport: "网球"
@@ -80,7 +86,9 @@ accounts:
   - username: "2023150090"
     default_campus: "丽湖校区"
     default_sport: "羽毛球"
-""")
+""",
+            encoding="utf-8",
+        )
         # env 会创建空的 default Config（accounts=[]），
         # 修复后应该不覆盖 yaml 的 accounts
         config = Config.load(str(config_path))
@@ -95,6 +103,7 @@ class TestConfigValidation:
     def test_load_with_invalid_path_uses_defaults(self, mock_env):
         """Loading non-existent config file uses defaults instead of raising."""
         import sys
+
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
         from booking.config import Config
 
@@ -106,6 +115,7 @@ class TestConfigValidation:
     def test_config_has_required_fields(self, mock_env):
         """Config has all required fields."""
         import sys
+
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
         from booking.config import Config
 
@@ -125,18 +135,21 @@ class TestConfigDataclass:
     def test_config_is_dataclass(self, mock_env):
         """Config is a dataclass."""
         import sys
+
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+        from dataclasses import is_dataclass
+
         from booking.config import Config
 
-        from dataclasses import is_dataclass
         assert is_dataclass(Config)
 
     def test_config_immutable(self, mock_env):
         """Config instances cannot be modified after creation."""
         import sys
+
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
         from booking.config import Config
 
         config = Config.from_defaults()
-        with pytest.raises(Exception):  # frozen dataclass should raise
+        with pytest.raises(Exception):  # frozen dataclass should raise  # noqa: B017
             config.default_campus = "changed"

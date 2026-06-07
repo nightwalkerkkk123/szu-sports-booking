@@ -1,6 +1,4 @@
 """Text matcher for exact string matching."""
-import re
-from typing import Pattern
 
 
 class TextMatcher:
@@ -32,4 +30,5 @@ class TextMatcher:
 
 class ExactMatcher(TextMatcher):
     """精确匹配的别名，与TextMatcher等价"""
+
     pass

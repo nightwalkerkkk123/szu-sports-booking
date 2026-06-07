@@ -1,6 +1,6 @@
 """Tests for booking.errors module - ErrorCode and ERROR_MAP."""
-import pytest
-from booking.errors import ErrorCode, ErrorInfo, ERROR_MAP
+
+from booking.errors import ERROR_MAP, ErrorCode, ErrorInfo
 
 
 class TestErrorCode:
@@ -52,7 +52,7 @@ class TestErrorInfo:
             should_switch_account=False,
             should_screenshot=True,
             should_alert=False,
-            hint="Check credentials"
+            hint="Check credentials",
         )
         assert info.code == ErrorCode.LOGIN_FAILED
         assert info.message == "Login failed"

@@ -1,20 +1,19 @@
 """Tests for matchers module."""
-import pytest
 
 from booking.matchers import (
-    TextMatcher,
-    ExactMatcher,
-    RegexMatcher,
-    TimeSlotMatcher,
-    ContainsMatcher,
-    PrefixMatcher,
-    SuffixMatcher,
-    CompositeMatcher,
-    AnyOfMatcher,
     AllOfMatcher,
+    AnyOfMatcher,
+    CompositeMatcher,
+    ContainsMatcher,
+    ExactMatcher,
+    PrefixMatcher,
+    RegexMatcher,
+    SuffixMatcher,
+    TextMatcher,
+    TimeSlotMatcher,
+    create_campus_matcher,
     create_flexible_matcher,
     create_time_slot_matcher,
-    create_campus_matcher,
 )
 
 
@@ -227,18 +226,22 @@ class TestAnyOfMatcher:
 
     def test_match_any_success(self):
         """任一匹配成功"""
-        matcher = AnyOfMatcher([
-            TextMatcher(),
-            ContainsMatcher(),
-        ])
+        matcher = AnyOfMatcher(
+            [
+                TextMatcher(),
+                ContainsMatcher(),
+            ]
+        )
         assert matcher.match("粤海校区", "校区") is True
 
     def test_match_all_fail(self):
         """全部失败"""
-        matcher = AnyOfMatcher([
-            TextMatcher(),
-            ContainsMatcher(),
-        ])
+        matcher = AnyOfMatcher(
+            [
+                TextMatcher(),
+                ContainsMatcher(),
+            ]
+        )
         assert matcher.match("粤海校区", "深圳") is False
 
     def test_add(self):
@@ -255,18 +258,22 @@ class TestAllOfMatcher:
 
     def test_match_all_success(self):
         """全部匹配成功"""
-        matcher = AllOfMatcher([
-            ContainsMatcher(),
-            PrefixMatcher(),
-        ])
+        matcher = AllOfMatcher(
+            [
+                ContainsMatcher(),
+                PrefixMatcher(),
+            ]
+        )
         assert matcher.match("粤海校区", "粤") is True
 
     def test_match_partial_fail(self):
         """部分匹配失败"""
-        matcher = AllOfMatcher([
-            ContainsMatcher(),
-            PrefixMatcher(),
-        ])
+        matcher = AllOfMatcher(
+            [
+                ContainsMatcher(),
+                PrefixMatcher(),
+            ]
+        )
         assert matcher.match("粤海校区", "校") is False
 
     def test_add(self):

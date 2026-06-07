@@ -1,9 +1,9 @@
 """Tests for booking.database module - Local data storage."""
-import os
+
 import sqlite3
+from datetime import datetime
+
 import pytest
-from datetime import datetime, timedelta
-from pathlib import Path
 
 
 class TestDatabaseInit:
@@ -14,7 +14,7 @@ class TestDatabaseInit:
         from booking.database import Database
 
         db_path = tmp_path / "test.db"
-        db = Database(db_path)
+        db = Database(db_path)  # noqa: F841
 
         with sqlite3.connect(db_path) as conn:
             cursor = conn.execute(
@@ -27,7 +27,7 @@ class TestDatabaseInit:
         from booking.database import Database
 
         db_path = tmp_path / "test.db"
-        db = Database(db_path)
+        db = Database(db_path)  # noqa: F841
 
         with sqlite3.connect(db_path) as conn:
             cursor = conn.execute(
@@ -58,7 +58,7 @@ class TestBookingRecord:
             status="success",
             error_code=None,
             duration_ms=1500,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert record.trace_id == "trace-123"
@@ -72,7 +72,7 @@ class TestInsertRecord:
 
     def test_insert_record_saves_to_db(self, tmp_path):
         """insert_record saves record to database."""
-        from booking.database import Database, BookingRecord
+        from booking.database import BookingRecord, Database
 
         db_path = tmp_path / "test.db"
         db = Database(db_path)
@@ -87,7 +87,7 @@ class TestInsertRecord:
             status="success",
             error_code=None,
             duration_ms=2000,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         db.insert_record(record)
@@ -104,7 +104,7 @@ class TestGetRecordsByAccount:
 
     def test_get_records_by_account_returns_list(self, tmp_path):
         """get_records_by_account returns list of records."""
-        from booking.database import Database, BookingRecord
+        from booking.database import BookingRecord, Database
 
         db_path = tmp_path / "test.db"
         db = Database(db_path)
@@ -121,7 +121,7 @@ class TestGetRecordsByAccount:
                 status="success" if i % 2 == 0 else "failed",
                 error_code=None,
                 duration_ms=1000,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
             db.insert_record(record)
 
@@ -145,7 +145,7 @@ class TestGetSuccessRate:
 
     def test_get_success_rate_calculates_correctly(self, tmp_path):
         """get_success_rate calculates success/total correctly."""
-        from booking.database import Database, BookingRecord
+        from booking.database import BookingRecord, Database
 
         db_path = tmp_path / "test.db"
         db = Database(db_path)
@@ -162,12 +162,12 @@ class TestGetSuccessRate:
                 status=status,
                 error_code=None,
                 duration_ms=1000,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
             db.insert_record(record)
 
         rate = db.get_success_rate()
-        assert rate == pytest.approx(2/3)
+        assert rate == pytest.approx(2 / 3)
 
 
 class TestGetRecentRecords:
@@ -175,7 +175,7 @@ class TestGetRecentRecords:
 
     def test_get_recent_records_returns_limited_results(self, tmp_path):
         """get_recent_records respects limit parameter."""
-        from booking.database import Database, BookingRecord
+        from booking.database import BookingRecord, Database
 
         db_path = tmp_path / "test.db"
         db = Database(db_path)
@@ -192,7 +192,7 @@ class TestGetRecentRecords:
                 status="success",
                 error_code=None,
                 duration_ms=1000,
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
             )
             db.insert_record(record)
 

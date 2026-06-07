@@ -1,14 +1,14 @@
 """Local data storage using SQLite."""
+
+import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
-
-import sqlite3
 
 
 def _register_datetime_adapter() -> None:
     """Register adapter for datetime to avoid deprecation warning."""
+
     def adapt_datetime(dt: datetime) -> str:
         return dt.isoformat()
 
@@ -23,14 +23,14 @@ _register_datetime_adapter()
 class BookingRecord:
     """Record of a booking attempt."""
 
-    id: Optional[int]
+    id: int | None
     trace_id: str
     account: str
     campus: str
     sport: str
     time_slot: str
     status: str  # "success" or "failed"
-    error_code: Optional[str]
+    error_code: str | None
     duration_ms: int
     timestamp: datetime
 
@@ -71,59 +71,74 @@ class Database:
     def insert_record(self, record: BookingRecord) -> None:
         """Insert a booking record."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO booking_records
                 (trace_id, account, campus, sport, time_slot, status, error_code, duration_ms, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                record.trace_id,
-                record.account,
-                record.campus,
-                record.sport,
-                record.time_slot,
-                record.status,
-                record.error_code,
-                record.duration_ms,
-                record.timestamp,
-            ))
+            """,
+                (
+                    record.trace_id,
+                    record.account,
+                    record.campus,
+                    record.sport,
+                    record.time_slot,
+                    record.status,
+                    record.error_code,
+                    record.duration_ms,
+                    record.timestamp,
+                ),
+            )
 
-    def get_records_by_account(self, account: str, limit: int = 100) -> List[BookingRecord]:
+    def get_records_by_account(self, account: str, limit: int = 100) -> list[BookingRecord]:
         """Get booking records for a specific account."""
         with sqlite3.connect(self.db_path) as conn:
-            rows = conn.execute("""
+            rows = conn.execute(
+                """
                 SELECT id, trace_id, account, campus, sport, time_slot, status, error_code, duration_ms, timestamp
                 FROM booking_records
                 WHERE account = ?
                 ORDER BY timestamp DESC
                 LIMIT ?
-            """, (account, limit)).fetchall()
+            """,
+                (account, limit),
+            ).fetchall()
             return [BookingRecord(*row) for row in rows]
 
-    def get_recent_records(self, limit: int = 50) -> List[BookingRecord]:
+    def get_recent_records(self, limit: int = 50) -> list[BookingRecord]:
         """Get most recent booking records."""
         with sqlite3.connect(self.db_path) as conn:
-            rows = conn.execute("""
+            rows = conn.execute(
+                """
                 SELECT id, trace_id, account, campus, sport, time_slot, status, error_code, duration_ms, timestamp
                 FROM booking_records
                 ORDER BY timestamp DESC
                 LIMIT ?
-            """, (limit,)).fetchall()
+            """,
+                (limit,),
+            ).fetchall()
             return [BookingRecord(*row) for row in rows]
 
     def get_success_rate(self, days: int = 7) -> float:
         """Calculate success rate over the specified number of days."""
         with sqlite3.connect(self.db_path) as conn:
-            total = conn.execute("""
+            total = conn.execute(
+                """
                 SELECT COUNT(*) FROM booking_records
                 WHERE timestamp > datetime('now', ?)
-            """, (f"-{days} days",)).fetchone()[0]
+            """,
+                (f"-{days} days",),
+            ).fetchone()[0]
 
             if total == 0:
                 return 0.0
 
-            success = conn.execute("""
+            success = conn.execute(
+                """
                 SELECT COUNT(*) FROM booking_records
                 WHERE timestamp > datetime('now', ?) AND status = 'success'
-            """, (f"-{days} days",)).fetchone()[0]
+            """,
+                (f"-{days} days",),
+            ).fetchone()[0]
 
             return success / total

@@ -1,10 +1,16 @@
 """Step tracking for booking execution."""
+
 import json
 import time
+import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+
+def generate_trace_id() -> str:
+    """生成唯一 trace ID（用于关联一次完整预约流程）"""
+    return str(uuid.uuid4())
 
 
 @dataclass
@@ -176,6 +182,4 @@ def create_tracker() -> StepTracker:
     Returns:
         New StepTracker instance
     """
-    from booking.observability.tracer import generate_trace_id
-
     return StepTracker(trace_id=generate_trace_id())
